@@ -1,35 +1,103 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { CrudTable } from './CrudTable';
+import { ConfigProvider } from 'antd';
+import enUS from 'antd/locale/en_US';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface User {
+  id: number;
+  name: string;
+  age: number;
+  createdAt: string;
+  status: 'active' | 'inactive';
+  isAdmin: boolean;
 }
 
-export default App
+class UserService {
+  async getList(params: any): Promise<{ data: User[]; total: number }> {
+    // todo
+    return {
+      data: [
+        { id: 1, name: 'Jane Smith 1', age: 30, createdAt: '2023-01-01', status: 'active', isAdmin: true },
+        { id: 2, name: 'Jane Smith 2', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 3, name: 'Jane Smith 3', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 4, name: 'Jane Smith 4', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 5, name: 'Jane Smith 5', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 6, name: 'Jane Smith 6', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 7, name: 'Jane Smith 7', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 8, name: 'Jane Smith 8', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 9, name: 'Jane Smith 9', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 10, name: 'Jane Smith 10', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 11, name: 'Jane Smith 11', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+        { id: 12, name: 'Jane Smith 12', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
+      ],
+      total: 2,
+    }
+  }
+
+  async create(data: Partial<User>) {
+    // todo
+    return data as User;
+  }
+
+  async update(id: number, data: Partial<User>) {
+    // todo
+    return { id, ...data } as User;
+  }
+
+  async delete(id: number) {
+    // todo
+  }
+}
+
+const UserTable = () => (
+  <CrudTable<User>
+    title="User Management"
+    rowKey="id"
+    // defaultPageSize={10}
+    service={new UserService()}
+    columns={[
+      {
+        dataIndex: 'name',
+        title: 'Name',
+        fieldType: 'string',
+        formConfig: { required: true },
+      },
+      {
+        dataIndex: 'age',
+        title: 'Age',
+        fieldType: 'number',
+      },
+      {
+        dataIndex: 'age2',
+        title: 'Age2',
+        fieldType: 'number',
+      },
+      {
+        dataIndex: 'createdAt',
+        title: 'Created At',
+        fieldType: 'date',
+      },
+      {
+        dataIndex: 'status',
+        title: 'Status',
+        fieldType: 'enum',
+        enumOptions: {
+          active: { text: 'Active' },
+          inactive: { text: 'Inactive' },
+        },
+      },
+      {
+        dataIndex: 'isAdmin',
+        title: 'Administrator',
+        fieldType: 'boolean',
+      },
+    ]}
+  />
+);
+
+const App = () => <ConfigProvider locale={enUS}>
+  <UserTable />
+</ConfigProvider>
+
+// eslint-disable-next-line import/no-default-export
+export default App;
