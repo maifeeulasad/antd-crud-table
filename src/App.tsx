@@ -13,6 +13,7 @@ interface User {
 }
 
 class UserService {
+  // @ts-ignore
   async getList(params: any): Promise<{ data: User[]; total: number }> {
     // todo
     return {
@@ -44,6 +45,7 @@ class UserService {
     return { id, ...data } as User;
   }
 
+  // @ts-ignore
   async delete(id: number) {
     // todo
   }
