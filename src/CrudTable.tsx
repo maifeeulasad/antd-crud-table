@@ -5,6 +5,7 @@ import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select
 import { useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
+import dayjs from 'dayjs';
 
 type DataType = Record<string, any>;
 type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
@@ -127,12 +128,20 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const openModal = (record?: Partial<T>) => {
     setCurrentRecord(record || null);
     if (record) {
-      form.setFieldsValue(record);
+      const values = { ...record };
+      columns.forEach((col) => {
+        const field = col.dataIndex as string;
+        if (col.fieldType === 'date' && values[field]) {
+          // @ts-ignore
+          values[field] = dayjs(values[field]);
+        }
+      });
+    form.setFieldsValue(values);
     } else {
-      form.resetFields();
-    }
-    setModalVisible(true);
-  };
+        form.resetFields();
+      }
+      setModalVisible(true);
+    };
 
   const handleOk = async () => {
     try {
@@ -149,6 +158,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
           transformedValues[field] = col.formConfig.transform(values[field]);
         }
       });
+      console.log('Transformed Values:', transformedValues);
 
       if (currentRecord && currentRecord[rowKey]) {
         await service.update(currentRecord[rowKey], transformedValues);
