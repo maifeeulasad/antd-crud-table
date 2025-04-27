@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      react:
-        specifier: ^19.0.0
-        version: 19.1.0
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.1.0(react@19.1.0)
     devDependencies:
       '@ant-design/icons':
         specifier: ^6.0.0
@@ -51,6 +44,12 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.0.0
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
