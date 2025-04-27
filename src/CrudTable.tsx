@@ -7,6 +7,8 @@ import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
 import dayjs from 'dayjs';
 
+import './index.css';
+
 type DataType = Record<string, any>;
 type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
 
@@ -184,6 +186,8 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       <ProTable<T>
         headerTitle={title}
         rowKey={rowKey as string}
+        // row classname to gray and white
+        rowClassName={(_, index) => (index % 2 === 0 && 'row-differentiator' || '')}
         actionRef={actionRef}
         columns={enhancedColumns}
         request={handleRequest}
