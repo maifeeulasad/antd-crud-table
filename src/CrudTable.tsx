@@ -206,6 +206,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       />
 
       <Modal
+        forceRender
         title={currentRecord ? 'Edit Item' : 'Create Item'}
         open={modalVisible}
         onOk={handleOk}
