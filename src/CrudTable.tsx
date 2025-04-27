@@ -158,7 +158,6 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
           transformedValues[field] = col.formConfig.transform(values[field]);
         }
       });
-      console.log('Transformed Values:', transformedValues);
 
       if (currentRecord && currentRecord[rowKey]) {
         await service.update(currentRecord[rowKey], transformedValues);
@@ -188,16 +187,6 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         actionRef={actionRef}
         columns={enhancedColumns}
         request={handleRequest}
-        editable={{
-          type: 'multiple',
-          onSave: async (key, row) => {
-            openModal(row); // Open modal for editing inline
-          },
-          onDelete: async (key) => {
-            await service.delete(key);
-            actionRef.current?.reload();
-          },
-        }}
         search={{ labelWidth: 'auto' }}
         pagination={{ pageSize: defaultPageSize }}
         toolBarRender={() => [
