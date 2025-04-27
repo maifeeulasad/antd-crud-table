@@ -40,7 +40,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
   const [form] = Form.useForm();
 
-  const enhancedColumns: ProColumns<T>[] = (columns || []).map((col) => {
+  let enhancedColumns: ProColumns<T>[] = (columns || []).map((col) => {
     const baseColumn: ProColumns<T> = {
       ...col,
       dataIndex: col.dataIndex as string,
@@ -87,6 +87,21 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       default:
         return baseColumn;
     }
+  });
+  enhancedColumns.push({
+    title: 'Actions',
+    valueType: 'option',
+    render: (_, record: T) => [
+      <Button key="edit" type="primary" onClick={() => openModal(record)}>
+        Edit
+      </Button>,
+      <Button key="delete" type="primary" danger onClick={async () => {
+        await service.delete(record[rowKey]);
+        actionRef.current?.reload();
+      }}>
+        Delete
+      </Button>,
+    ],
   });
 
   const handleRequest = async (
