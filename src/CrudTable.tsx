@@ -1,10 +1,10 @@
 import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider } from '@ant-design/pro-components';
-import { Button, Dropdown, Tag, message } from 'antd';
-import { useRef } from 'react';
+import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
+import { useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatISO } from 'date-fns';
 
 type DataType = Record<string, any>;
 type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
@@ -36,6 +36,9 @@ interface CrudTableConfig<T extends DataType> {
 const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const actionRef = useRef<ActionType>(null);
   const { columns, service, rowKey, title, defaultPageSize = 5 } = config;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
+  const [form] = Form.useForm();
 
   const enhancedColumns: ProColumns<T>[] = (columns || []).map((col) => {
     const baseColumn: ProColumns<T> = {
@@ -106,6 +109,52 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
     }
   };
 
+  const openModal = (record?: Partial<T>) => {
+    setCurrentRecord(record || null);
+    if (record) {
+      form.setFieldsValue(record);
+    } else {
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      const transformedValues = { ...values };
+
+      // Handle any transformations like date formatting
+      columns.forEach((col) => {
+        const field = col.dataIndex as string;
+        if (col.fieldType === 'date' && values[field]) {
+          transformedValues[field] = formatISO(values[field]);
+        }
+        if (col.formConfig?.transform) {
+          transformedValues[field] = col.formConfig.transform(values[field]);
+        }
+      });
+
+      if (currentRecord && currentRecord[rowKey]) {
+        await service.update(currentRecord[rowKey], transformedValues);
+        message.success('Updated successfully');
+      } else {
+        await service.create(transformedValues);
+        message.success('Created successfully');
+      }
+
+      setModalVisible(false);
+      actionRef.current?.reload();
+    } catch (error) {
+      console.error(error);
+      message.error('Submit failed');
+    }
+  };
+
+  const handleCancel = () => {
+    setModalVisible(false);
+  };
+
   return (
     <ProConfigProvider needDeps>
       <ProTable<T>
@@ -117,8 +166,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         editable={{
           type: 'multiple',
           onSave: async (key, row) => {
-            await service.update(key, row);
-            actionRef.current?.reload();
+            openModal(row); // Open modal for editing inline
           },
           onDelete: async (key) => {
             await service.delete(key);
@@ -132,10 +180,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             key="add"
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => {
-              // todo: create logic here
-              actionRef.current?.reload();
-            }}
+            onClick={() => openModal()}
           >
             New
           </Button>,
@@ -144,7 +189,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             menu={{
               items: [
                 { key: 'export', label: 'Export' },
-                { key: 'refresh', label: 'Refresh' },
+                { key: 'refresh', label: 'Refresh', onClick: () => actionRef.current?.reload() },
               ],
             }}
           >
@@ -159,8 +204,87 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         }}
         dateFormatter="string"
       />
+
+      <Modal
+        title={currentRecord ? 'Edit Item' : 'Create Item'}
+        open={modalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical">
+          {columns.map((col) => {
+            if (!col.dataIndex) return null;
+            const name = col.dataIndex as string;
+            const label = col.title as string;
+
+            switch (col.fieldType) {
+              case 'string':
+                return (
+                  <Form.Item
+                    key={name}
+                    name={name}
+                    label={label}
+                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                );
+              case 'number':
+                return (
+                  <Form.Item
+                    key={name}
+                    name={name}
+                    label={label}
+                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                  >
+                    <InputNumber style={{ width: '100%' }} />
+                  </Form.Item>
+                );
+              case 'date':
+                return (
+                  <Form.Item
+                    key={name}
+                    name={name}
+                    label={label}
+                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                  >
+                    <DatePicker style={{ width: '100%' }} showTime />
+                  </Form.Item>
+                );
+              case 'boolean':
+                return (
+                  <Form.Item
+                    key={name}
+                    name={name}
+                    label={label}
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                );
+              case 'enum':
+                return (
+                  <Form.Item
+                    key={name}
+                    name={name}
+                    label={label}
+                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                  >
+                    <Select options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
+                      label: option.text,
+                      value,
+                    }))} />
+                  </Form.Item>
+                );
+              default:
+                return null;
+            }
+          })}
+        </Form>
+      </Modal>
     </ProConfigProvider>
   );
 };
 
-export {CrudTable}
+export { CrudTable };
