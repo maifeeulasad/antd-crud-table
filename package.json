@@ -9,8 +9,7 @@
     "build:static": "tsc -b && vite build",
     "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts && node helper/post-build.js",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "postinstall": "pnpm run build:lib"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@ant-design/icons": "^6.0.0",
