@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build:static": "tsc -b && vite build",
-    "build:lib": "tsc --p ./tsconfig.build.json && vite build",
+    "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },
