@@ -1,5 +1,5 @@
 import './App.css'
-import CrudTableLazy from './CrudTableLazy';
+import CrudTableLazy from './CrudTable/CrudTableLazy';
 // import CrudTable from './CrudTable';
 import { ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
