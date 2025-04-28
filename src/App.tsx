@@ -69,6 +69,7 @@ const UserTable = () => (
         dataIndex: 'age',
         title: 'Age',
         fieldType: 'number',
+        fieldEditable: false,
       },
       {
         dataIndex: 'age2',
