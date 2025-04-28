@@ -21,6 +21,7 @@ interface CrudColumn<T extends DataType> extends ProColumns<T> {
     component?: React.ReactNode;
     transform?: (value: any) => any;
   };
+  fieldEditable?: boolean;
 }
 
 interface CrudTableConfig<T extends DataType> {
@@ -236,6 +237,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             if (!col.dataIndex) return null;
             const name = col.dataIndex as string;
             const label = col.title as string;
+            const fieldDisabled = !(col.fieldEditable ?? true);
 
             switch (col.fieldType) {
               case 'string':
@@ -246,7 +248,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
                   >
-                    <Input />
+                    <Input disabled={fieldDisabled} />
                   </Form.Item>
                 );
               case 'number':
@@ -257,7 +259,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
                   >
-                    <InputNumber style={{ width: '100%' }} />
+                    <InputNumber style={{ width: '100%' }} disabled={fieldDisabled} />
                   </Form.Item>
                 );
               case 'date':
@@ -268,7 +270,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
                   >
-                    <DatePicker style={{ width: '100%' }} showTime />
+                    <DatePicker style={{ width: '100%' }} showTime disabled={fieldDisabled} />
                   </Form.Item>
                 );
               case 'boolean':
@@ -279,7 +281,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     valuePropName="checked"
                   >
-                    <Switch />
+                    <Switch disabled={fieldDisabled}  />
                   </Form.Item>
                 );
               case 'enum':
@@ -290,9 +292,11 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
                   >
-                    <Select options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
-                      label: option.text,
-                      value,
+                    <Select 
+                      disabled={fieldDisabled} 
+                      options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
+                        label: option.text,
+                        value,
                     }))} />
                   </Form.Item>
                 );
