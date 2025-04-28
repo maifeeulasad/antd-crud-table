@@ -6,8 +6,8 @@
   "homepage": ".",
   "scripts": {
     "dev": "vite",
-    "build:static": "tsc -b && vite build --config vite.config.ts",
-    "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts",
+    "build:static": "tsc -b && vite build",
+    "build:lib": "tsc --p ./tsconfig.build.json && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
