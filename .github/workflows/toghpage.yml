@@ -24,7 +24,7 @@ jobs:
     - name: 'Installing deps'    
       run: pnpm i
     - name: 'Build'
-      run: pnpm build
+      run: pnpm build:static
     - name: 'Deploy'
       uses: peaceiris/actions-gh-pages@v4
       with:
