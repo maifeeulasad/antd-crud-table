@@ -3,15 +3,15 @@ import path from 'path';
 import packageJson from '../package.json' assert { type: 'json' };
 import { exit } from 'process';
 
-const distPath = path.resolve('dist/lib');
+const distPath = path.resolve('dist');
 const packageJsonPath = path.join(distPath, 'package.json');
 
 (async () => {
     try {
-        // Ensure the dist/lib directory exists
+        // Ensure the dist directory exists
         await fs.mkdir(distPath, { recursive: true });
 
-        // Write the package.json file to the `dist/lib` directory
+        // Write the package.json file to the `dist` directory
         await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
 
         console.log(`package.json has been copied to ${packageJsonPath}`);
