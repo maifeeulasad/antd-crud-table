@@ -7,13 +7,23 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       '@ant-design/icons':
         specifier: ^6.0.0
         version: 6.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@ant-design/pro-components':
         specifier: ^2.8.7
         version: 2.8.7(antd@5.24.8(date-fns@4.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(rc-field-form@2.7.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      antd:
+        specifier: ^5.24.8
+        version: 5.24.8(date-fns@4.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
+    devDependencies:
       '@eslint/js':
         specifier: ^9.22.0
         version: 9.25.1
@@ -29,15 +39,6 @@ importers:
       '@vitejs/plugin-react-swc':
         specifier: ^3.8.0
         version: 3.9.0(vite@6.3.3(@types/node@22.15.2))
-      antd:
-        specifier: ^5.24.8
-        version: 5.24.8(date-fns@4.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
-      dayjs:
-        specifier: ^1.11.13
-        version: 1.11.13
       eslint:
         specifier: ^9.22.0
         version: 9.25.1
