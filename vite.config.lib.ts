@@ -15,10 +15,8 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'lib/main.ts'),
-      name: 'CrudTable',
-      fileName: (format) => `CrudTable.${format}.js`,
-      formats: ['es', 'cjs', 'umd'],
+      entry: [path.resolve(__dirname, 'lib/CrudTable.tsx'),path.resolve(__dirname, 'lib/CrudTableLazy.tsx')],
+      formats: ['es', 'cjs']
     },
     outDir: 'dist',
     rollupOptions: {
