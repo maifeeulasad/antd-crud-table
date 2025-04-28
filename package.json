@@ -40,7 +40,13 @@
     "dayjs": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
-  },  
+  },
   "main": "dist/lib/antd-crud-table.cjs.js",
-  "module": "dist/lib/antd-crud-table.es.js"
+  "module": "dist/lib/antd-crud-table.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/lib/antd-crud-table.es.js",
+      "require": "./dist/lib/antd-crud-table.cjs.js"
+    }
+  }
 }
