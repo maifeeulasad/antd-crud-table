@@ -54,6 +54,10 @@
     ".": {
       "import": "./dist/CrudTable.js",
       "require": "./dist/CrudTable.cjs"
+    },
+    "./CrudTableLazy": {
+      "import": "./dist/CrudTableLazy.js",
+      "require": "./dist/CrudTableLazy.cjs"
     }
   },
   "files": [
