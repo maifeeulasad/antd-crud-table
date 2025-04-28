@@ -49,5 +49,8 @@
       "import": "./dist/lib/antd-crud-table.es.js",
       "require": "./dist/lib/antd-crud-table.cjs.js"
     }
-  }
+  },
+  "files": [
+		"dist"
+	]
 }
