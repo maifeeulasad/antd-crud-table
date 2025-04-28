@@ -1,5 +1,5 @@
-import CrudTable from "./CrudTable/CrudTable";
-import CrudTableLazy from "./CrudTable/CrudTableLazy";
+import CrudTable from "./CrudTable";
+import CrudTableLazy from "./CrudTableLazy";
 
 export { CrudTable, CrudTableLazy };
-export type { CrudTableConfig, CrudColumn, DataType } from "./CrudTable/CrudTable";
+export type { CrudTableConfig, CrudColumn, DataType } from "./CrudTable";
