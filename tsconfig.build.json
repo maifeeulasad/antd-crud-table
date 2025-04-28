@@ -1,5 +1,26 @@
 {
-    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ESNext"
+        ],
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "declarationDir": "./dist/lib/types",
+        "emitDeclarationOnly": false,
+        "outDir": "./dist/lib",
+        "jsx": "react-jsx",
+        "strict": true,
+        "forceConsistentCasingInFileNames": true
+    },
     "include": [
         "lib"
     ]
