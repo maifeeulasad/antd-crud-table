@@ -11,6 +11,7 @@
     "table",
     "components"
   ],
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build:static": "tsc -b && vite build",
