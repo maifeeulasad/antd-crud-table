@@ -39,12 +39,12 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
-  "main": "dist/lib/antd-crud-table.cjs.js",
-  "module": "dist/lib/antd-crud-table.es.js",
+  "main": "./dist/CrudTable.cjs",
+  "module": "./dist/CrudTable.js",
   "exports": {
     ".": {
-      "import": "./dist/lib/antd-crud-table.es.js",
-      "require": "./dist/lib/antd-crud-table.cjs.js"
+      "import": "./dist/CrudTable.js",
+      "require": "./dist/CrudTable.cjs"
     }
   },
   "files": [
