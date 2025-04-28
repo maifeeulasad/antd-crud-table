@@ -20,7 +20,7 @@ export default defineConfig({
     },
     outDir: 'dist',
     rollupOptions: {
-      external: ['react', 'react-dom', 'antd', '@ant-design/icons', '@ant-design/pro-components', 'date-fns', 'dayjs'],
+      external: ['react', 'react-dom'],
       output: {
         globals: {
           react: 'React',
