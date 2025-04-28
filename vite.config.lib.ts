@@ -16,8 +16,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.ts'),
-      name: 'AntdCrudTable',
-      fileName: (format) => `index.${format}.js`,
+      name: 'CrudTable',
+      fileName: (format) => `CrudTable.${format}.js`,
       formats: ['es', 'cjs', 'umd'],
     },
     outDir: 'dist',
