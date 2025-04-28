@@ -7,7 +7,7 @@ import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
 import dayjs from 'dayjs';
 
-import './index.css';
+import './CrudTable.css';
 
 type DataType = Record<string, any>;
 type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
