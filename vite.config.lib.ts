@@ -8,10 +8,10 @@ export default defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'lib/main.ts'),
       name: 'AntdCrudTable',
-      fileName: (format) => `antd-crud-table.${format}.js`,
+      fileName: (format) => `index.${format}.js`,
       formats: ['es', 'cjs', 'umd'],
     },
-    outDir: 'dist/lib',
+    outDir: 'dist',
     rollupOptions: {
       external: ['react', 'react-dom', 'antd', '@ant-design/icons', '@ant-design/pro-components', 'date-fns', 'dayjs'],
       output: {
