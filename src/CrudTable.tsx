@@ -306,4 +306,5 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   );
 };
 
-export { CrudTable };
+export default CrudTable;
+export type { CrudTableConfig, CrudColumn, DataType };
