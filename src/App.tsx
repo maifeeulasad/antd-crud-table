@@ -1,5 +1,6 @@
 import './App.css'
-import { CrudTable } from './CrudTable';
+import CrudTableLazy from './CrudTableLazy';
+// import CrudTable from './CrudTable';
 import { ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
 
@@ -52,7 +53,7 @@ class UserService {
 }
 
 const UserTable = () => (
-  <CrudTable<User>
+  <CrudTableLazy<User>
     title="User Management"
     rowKey="id"
     // defaultPageSize={10}
