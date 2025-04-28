@@ -1,15 +1,26 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
-import react from '@vitejs/plugin-react-swc'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './',
   build: {
     lib: {
-      entry: resolve(__dirname, 'lib/main.ts'),
-      formats: ['es']
-    }
-  }
-})
+      entry: path.resolve(__dirname, 'lib/main.ts'),
+      name: 'AntdCrudTable',
+      fileName: (format) => `antd-crud-table.${format}.js`,
+      formats: ['es', 'cjs', 'umd'],
+    },
+    outDir: 'dist/lib',
+    rollupOptions: {
+      external: ['react', 'react-dom', 'antd', '@ant-design/icons', '@ant-design/pro-components', 'date-fns', 'dayjs'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+          antd: 'antd',
+        },
+      },
+    },
+  },
+});
