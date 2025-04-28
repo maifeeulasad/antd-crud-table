@@ -15,7 +15,10 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: [path.resolve(__dirname, 'lib/CrudTable.tsx'), path.resolve(__dirname, 'lib/CrudTableLazy.tsx')],
+      entry: [
+        path.resolve(__dirname, 'lib/CrudTable.tsx'),
+        path.resolve(__dirname, 'lib/CrudTableLazy.tsx')
+      ],
       formats: ['es', 'cjs']
     },
     outDir: 'dist',
