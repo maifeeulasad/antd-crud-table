@@ -1,6 +1,6 @@
 import './App.css'
-import CrudTableLazy from '../lib/CrudTable/CrudTableLazy';
-// import CrudTable from '../lib/CrudTable/CrudTable';
+import CrudTableLazy from '../lib/CrudTableLazy';
+// import CrudTable from '../lib/CrudTable';
 import { ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
 
