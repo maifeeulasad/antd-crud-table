@@ -12,6 +12,7 @@
     "components"
   ],
   "license": "MIT",
+  "author": "Maifee Ul Asad<maifeeulasad@gmail.com>",
   "scripts": {
     "dev": "vite",
     "build:static": "tsc -b && vite build",
