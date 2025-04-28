@@ -4,6 +4,13 @@
   "version": "0.0.6",
   "type": "module",
   "homepage": ".",
+  "keywords": [
+    "antd",
+    "react",
+    "crud",
+    "table",
+    "components"
+  ],
   "scripts": {
     "dev": "vite",
     "build:static": "tsc -b && vite build",
