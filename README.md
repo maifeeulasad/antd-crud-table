@@ -119,3 +119,12 @@ Customize row striping using `.row-differentiator` in `CrudTable.css`:
 ---
 
 🎉 Build elegant CRUD interfaces faster than ever with `antd-crud-table`!
+
+
+---
+
+## References
+
+ - NPM: https://www.npmjs.com/package/antd-crud-table/
+ - GitHub: https://github.com/maifeeulasad/antd-crud-table/
+ - GitHub page (Live Demo): https://maifeeulasad.github.io/antd-crud-table/
