@@ -27,7 +27,7 @@ interface CrudColumn<T extends DataType> extends ProColumns<T> {
 interface CrudTableConfig<T extends DataType> {
   columns: CrudColumn<T>[];
   service: {
-    getList: (params: Partial<T>) => Promise<{ data: T[]; total: number }>;
+    getList: (params: any) => Promise<{ data: T[]; total: number }>;
     create: (data: Partial<T>) => Promise<T>;
     update: (id: any, data: Partial<T>) => Promise<T>;
     delete: (id: any) => Promise<void>;
