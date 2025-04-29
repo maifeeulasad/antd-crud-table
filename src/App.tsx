@@ -15,7 +15,7 @@ interface User {
 
 class UserService {
   // @ts-ignore
-  async getList(params: any): Promise<{ data: User[]; total: number }> {
+  static async getList(params: any): Promise<{ data: User[]; total: number }> {
     // todo
     return {
       data: [
@@ -36,18 +36,18 @@ class UserService {
     }
   }
 
-  async create(data: Partial<User>) {
+  static async create(data: Partial<User>) {
     // todo
     return data as User;
   }
 
-  async update(id: number, data: Partial<User>) {
+  static async update(id: number, data: Partial<User>) {
     // todo
     return { id, ...data } as User;
   }
 
   // @ts-ignore
-  async delete(id: number) {
+  static async delete(id: number) {
     // todo
   }
 }
@@ -57,7 +57,7 @@ const UserTable = () => (
     title="User Management"
     rowKey="id"
     // defaultPageSize={10}
-    service={new UserService()}
+    service={UserService}
     columns={[
       {
         dataIndex: 'name',
