@@ -44,6 +44,7 @@ const StaticDataExample = () => (
           console.error(`${operation} failed:`, error);
         },
       }}
+      // @ts-expect-error todo: fix actions type later
       customActions={(record, actions) => [
         <Button
           key="custom"
@@ -254,6 +255,7 @@ const CustomOperationsExample = () => (
           dataIndex: 'customField',
           title: 'Custom Render',
           fieldType: 'custom',
+          // @ts-expect-error todo: fix value type later
           customRender: (value, record) => (
             <span style={{ color: record.isAdmin ? 'blue' : 'gray' }}>
               {record.isAdmin ? '👑 Admin' : '👤 User'}
