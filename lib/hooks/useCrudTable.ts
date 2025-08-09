@@ -32,12 +32,22 @@ export type CrudState<T> = {
   pageSize: number;
 };
 
-export type UseCrudTableConfig<T> = {
-  // Static data approach
-  staticData?: T[];
+type UseCrudTableConfigBase = {
+  // Configuration
+  defaultPageSize?: number;
+  enableCache?: boolean;
+  optimisticUpdates?: boolean;
   
-  // API-based approach
-  api?: {
+  // Callbacks
+  onSuccess?: (operation: 'create' | 'update' | 'delete' | 'fetch', data: any) => void;
+  onError?: (operation: 'create' | 'update' | 'delete' | 'fetch', error: any) => void;
+}
+
+interface UseCrudTableConfigStatic<T> extends UseCrudTableConfigBase {
+  staticData: T[];
+}
+interface UseCrudTableConfigApi<T> extends UseCrudTableConfigBase {
+  api: {
     baseUrl?: string;
     endpoints?: {
       list?: string;
@@ -51,19 +61,15 @@ export type UseCrudTableConfig<T> = {
       response?: (data: any) => CrudResponse<T>;
     };
   };
-  
-  // Custom operations approach
-  operations?: Partial<CrudOperation<T>>;
-  
-  // Configuration
-  defaultPageSize?: number;
-  enableCache?: boolean;
-  optimisticUpdates?: boolean;
-  
-  // Callbacks
-  onSuccess?: (operation: 'create' | 'update' | 'delete', data: any) => void;
-  onError?: (operation: 'create' | 'update' | 'delete' | 'fetch', error: any) => void;
-};
+}
+interface UseCrudTableConfigCustom<T> extends UseCrudTableConfigBase {
+  operations: Partial<CrudOperation<T>>;
+}
+
+export type UseCrudTableConfig<T> =
+  | UseCrudTableConfigStatic<T>
+  | UseCrudTableConfigApi<T>
+  | UseCrudTableConfigCustom<T>;
 
 export type CrudTableActions<T> = {
   // Data operations
@@ -82,8 +88,8 @@ export type CrudTableActions<T> = {
 };
 
 // Default API operations
-const createApiOperations = <T>(config: UseCrudTableConfig<T>): CrudOperation<T> => {
-  const { baseUrl = '', endpoints = {}, headers = {}, transform } = config.api || {};
+const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation<T> => {
+  const { baseUrl = '', endpoints = {}, headers = {}, transform } = config.api;
   
   const defaultEndpoints = {
     list: '/list',
@@ -215,7 +221,7 @@ const createStaticOperations = <T>(staticData: T[], keyField: keyof T): CrudOper
 
 export const useCrudTable = <T extends Record<string, any>>(
   rowKey: keyof T,
-  config: UseCrudTableConfig<T> = {}
+  config: UseCrudTableConfig<T>
 ): CrudTableActions<T> => {
   const actionRef = useRef<ActionType>(null);
   const [state, setState] = useState<CrudState<T>>({
@@ -229,13 +235,13 @@ export const useCrudTable = <T extends Record<string, any>>(
 
   // Create operations based on config
   const operations = (() => {
-    if (config.operations) {
+    if ('operations' in config) {
       // Custom operations provided
       return config.operations as CrudOperation<T>;
-    } else if (config.staticData) {
+    } else if ('staticData' in config) {
       // Static data approach
       return createStaticOperations(config.staticData, rowKey);
-    } else if (config.api) {
+    } else if ('api' in config) {
       // API-based approach
       return createApiOperations(config);
     } else {
