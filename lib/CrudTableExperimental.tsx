@@ -46,10 +46,10 @@ interface EnhancedCrudTableConfig<T extends DataType> {
 const CrudTableExperimental = <T extends DataType>(config: EnhancedCrudTableConfig<T>) => {
   const { columns, rowKey, title, defaultPageSize = 10, hookConfig, enableBulkOperations = false, customActions } = config;
   
-  // Use the new hook
+    // Use the new hook
   const crudActions = useCrudTable(rowKey, {
-    ...hookConfig,
     defaultPageSize,
+    ...hookConfig
   });
   
   const [modalVisible, setModalVisible] = useState(false);
