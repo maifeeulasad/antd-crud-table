@@ -246,10 +246,12 @@ Create your own specialized hooks for different use cases:
 ```tsx
 import { useCrudTable, type UseCrudTableConfig } from 'antd-crud-table';
 
-export const useUserCrud = (config?: Partial<UseCrudTableConfig<any>>) => {
-  return useCrudTable('id', {
-    defaultPageSize: 10,
-    optimisticUpdates: true,
+#### Example 1: useUserCrud - Specialized User Management
+```tsx
+import { useCrudTable, type UseCrudTableConfig } from 'antd-crud-table';
+
+export const useUserCrud = (baseConfig?: Partial<UseCrudTableConfig<any>['api']>) => {
+  const config: UseCrudTableConfig<any> = {
     api: {
       baseUrl: '/api/users',
       headers: {
@@ -267,7 +269,10 @@ export const useUserCrud = (config?: Partial<UseCrudTableConfig<any>>) => {
           success: true,
         }),
       },
+      ...baseConfig,
     },
+    defaultPageSize: 10,
+    optimisticUpdates: true,
     onSuccess: (operation, data) => {
       console.log(`User ${operation} completed:`, data);
     },
@@ -275,8 +280,9 @@ export const useUserCrud = (config?: Partial<UseCrudTableConfig<any>>) => {
       console.error(`User ${operation} failed:`, error);
       // Could add toast notifications, error reporting, etc.
     },
-    ...config,
-  });
+  };
+
+  return useCrudTable('id', config);
 };
 ```
 
@@ -368,15 +374,19 @@ export const useLocalStorageCrud = <T extends Record<string, any>>(
 
 #### Example 3: useRealtimeCrud - WebSocket Integration
 ```tsx
+#### Example 3: useRealtimeCrud - WebSocket Integration
+```tsx
 export const useRealtimeCrud = <T extends Record<string, any>>(
   rowKey: keyof T,
   websocketUrl: string,
   apiConfig: UseCrudTableConfig<T>['api']
 ) => {
-  const crud = useCrudTable(rowKey, {
+  const config: UseCrudTableConfig<T> = {
     api: apiConfig,
     optimisticUpdates: false, // Disable optimistic updates for realtime
-  });
+  };
+  
+  const crud = useCrudTable(rowKey, config);
 
   // In a real implementation, you would set up WebSocket listeners here
   // useEffect(() => {
@@ -402,29 +412,35 @@ export const useRealtimeCrud = <T extends Record<string, any>>(
 
 #### Example 4: useInfiniteScrollCrud - Infinite Scrolling
 ```tsx
+#### Example 4: useInfiniteScrollCrud - Infinite Scrolling
+```tsx
 export const useInfiniteScrollCrud = <T extends Record<string, any>>(
   rowKey: keyof T,
-  config: UseCrudTableConfig<T>
+  baseConfig: UseCrudTableConfig<T>
 ) => {
   // This would extend the base hook with infinite scroll capabilities
   // Implementation would handle cursor-based pagination, data accumulation, etc.
   
-  return useCrudTable(rowKey, {
-    ...config,
+  const config: UseCrudTableConfig<T> = {
+    ...baseConfig,
     // Add infinite scroll specific configuration
-  });
+  };
+  
+  return useCrudTable(rowKey, config);
 };
 ```
 
 #### Example 5: useCachedCrud - Advanced Caching
 ```tsx
+#### Example 5: useCachedCrud - Advanced Caching
+```tsx
 export const useCachedCrud = <T extends Record<string, any>>(
   rowKey: keyof T,
   cacheKey: string,
-  config: UseCrudTableConfig<T>
+  baseConfig: UseCrudTableConfig<T>
 ) => {
-  return useCrudTable(rowKey, {
-    ...config,
+  const config: UseCrudTableConfig<T> = {
+    ...baseConfig,
     enableCache: true,
     // In a real implementation, you might integrate with:
     // - React Query
@@ -432,7 +448,10 @@ export const useCachedCrud = <T extends Record<string, any>>(
     // - Redux Toolkit Query
     // - Apollo Client
     // etc.
-  });
+  };
+  
+  return useCrudTable(rowKey, config);
+};
 };
 ```
 
