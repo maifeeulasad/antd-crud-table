@@ -1,5 +1,5 @@
 import './App.css'
-import CrudTableExperimental from '../lib/CrudTableExperimental';
+import CrudTableExperimentalLazy from '../lib/CrudTableExperimentalLazy';
 import { ConfigProvider, Button } from 'antd';
 import enUS from 'antd/locale/en_US';
 import CrudTableLazy from '../lib/CrudTableLazy';
@@ -29,7 +29,7 @@ const mockUsers: User[] = [
 const StaticDataExample = () => (
   <div style={{ marginBottom: '2rem' }}>
     <h2>Example 1: Static Data</h2>
-    <CrudTableExperimental<User>
+    <CrudTableExperimentalLazy<User>
       title="User Management (Static Data)"
       rowKey="id"
       defaultPageSize={5}
@@ -122,7 +122,7 @@ const StaticDataExample = () => (
 const ApiBasedExample = () => (
   <div style={{ marginBottom: '2rem' }}>
     <h2>Example 2: API Integration</h2>
-    <CrudTableExperimental<User>
+    <CrudTableExperimentalLazy<User>
       title="User Management (API Integration)"
       rowKey="id"
       defaultPageSize={5}
@@ -186,7 +186,7 @@ const ApiBasedExample = () => (
 const CustomOperationsExample = () => (
   <div style={{ marginBottom: '2rem' }}>
     <h2>Example 3: Custom Operations</h2>
-    <CrudTableExperimental<User>
+    <CrudTableExperimentalLazy<User>
       title="User Management (Custom Operations)"
       rowKey="id"
       defaultPageSize={5}
