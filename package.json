@@ -53,14 +53,14 @@
   "types": "./dist/CrudTable.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/CrudTable.d.ts",
       "import": "./dist/CrudTable.js",
-      "require": "./dist/CrudTable.cjs",
-      "types": "./dist/CrudTable.d.ts"
+      "require": "./dist/CrudTable.cjs"
     },
     "./CrudTableLazy": {
+      "types": "./dist/CrudTableLazy.d.ts",
       "import": "./dist/CrudTableLazy.js",
-      "require": "./dist/CrudTableLazy.cjs",
-      "types": "./dist/CrudTableLazy.d.ts"
+      "require": "./dist/CrudTableLazy.cjs"
     }
   },
   "files": [
