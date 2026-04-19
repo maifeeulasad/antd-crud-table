@@ -246,10 +246,6 @@ Create your own specialized hooks for different use cases:
 ```tsx
 import { useCrudTable, type UseCrudTableConfig } from 'antd-crud-table';
 
-#### Example 1: useUserCrud - Specialized User Management
-```tsx
-import { useCrudTable, type UseCrudTableConfig } from 'antd-crud-table';
-
 export const useUserCrud = (baseConfig?: Partial<UseCrudTableConfig<any>['api']>) => {
   const config: UseCrudTableConfig<any> = {
     api: {
@@ -374,8 +370,6 @@ export const useLocalStorageCrud = <T extends Record<string, any>>(
 
 #### Example 3: useRealtimeCrud - WebSocket Integration
 ```tsx
-#### Example 3: useRealtimeCrud - WebSocket Integration
-```tsx
 export const useRealtimeCrud = <T extends Record<string, any>>(
   rowKey: keyof T,
   websocketUrl: string,
@@ -412,8 +406,6 @@ export const useRealtimeCrud = <T extends Record<string, any>>(
 
 #### Example 4: useInfiniteScrollCrud - Infinite Scrolling
 ```tsx
-#### Example 4: useInfiniteScrollCrud - Infinite Scrolling
-```tsx
 export const useInfiniteScrollCrud = <T extends Record<string, any>>(
   rowKey: keyof T,
   baseConfig: UseCrudTableConfig<T>
@@ -430,8 +422,6 @@ export const useInfiniteScrollCrud = <T extends Record<string, any>>(
 };
 ```
 
-#### Example 5: useCachedCrud - Advanced Caching
-```tsx
 #### Example 5: useCachedCrud - Advanced Caching
 ```tsx
 export const useCachedCrud = <T extends Record<string, any>>(
