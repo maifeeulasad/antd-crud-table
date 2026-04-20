@@ -1,6 +1,5 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Request, Response } from 'express';
 
 interface User {
   id: number;
@@ -19,26 +18,26 @@ let users: User[] = [
 ];
 
 // Get all users
-app.get('/users', (_req: Request, res: Response) => {
+app.get('/users', (_req, res) => {
   res.json(users);
 });
 
 // Get a user by ID
-app.get('/users/:id', (req: Request, res: Response) => {
+app.get('/users/:id', (req, res) => {
   const user = users.find(u => u.id === Number(req.params.id));
   if (user) res.json(user);
   else res.status(404).json({ message: 'User not found' });
 });
 
 // Create a new user
-app.post('/users', (req: Request, res: Response) => {
+app.post('/users', (req, res) => {
   const newUser: User = { id: Date.now(), ...req.body };
   users.push(newUser);
   res.status(201).json(newUser);
 });
 
 // Update a user
-app.put('/users/:id', (req: Request, res: Response) => {
+app.put('/users/:id', (req, res) => {
   const index = users.findIndex(u => u.id === Number(req.params.id));
   if (index !== -1) {
     users[index] = { ...users[index], ...req.body };
@@ -49,7 +48,7 @@ app.put('/users/:id', (req: Request, res: Response) => {
 });
 
 // Delete a user
-app.delete('/users/:id', (req: Request, res: Response) => {
+app.delete('/users/:id', (req, res) => {
   const index = users.findIndex(u => u.id === Number(req.params.id));
   if (index !== -1) {
     const deleted = users.splice(index, 1);
