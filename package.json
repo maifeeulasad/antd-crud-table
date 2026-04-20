@@ -20,12 +20,14 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@ant-design/icons": "^6.0.0",
     "@ant-design/pro-components": "^2.8.10",
     "antd": "^6.3.6",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.13",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
@@ -43,10 +45,6 @@
     "typescript-eslint": "^8.26.1",
     "vite": "^8.0.8",
     "vite-plugin-dts": "^4.5.3"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
   },
   "main": "./dist/CrudTable.cjs",
   "module": "./dist/CrudTable.js",
