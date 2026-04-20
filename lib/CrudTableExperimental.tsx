@@ -1,6 +1,6 @@
 import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { ProTable, ProConfigProvider } from '@ant-design/pro-components';
+import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
 import { useState, useEffect } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
@@ -297,7 +297,7 @@ const CrudTableExperimental = <T extends DataType>(config: EnhancedCrudTableConf
   } : undefined;
 
   return (
-    <ProConfigProvider needDeps>
+    <ProConfigProvider needDeps intl={enUSIntl}>
       <ProTable<T>
         headerTitle={title}
         rowKey={rowKey as string}
