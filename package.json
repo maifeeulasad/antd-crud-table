@@ -4,6 +4,10 @@
   "version": "0.1.2",
   "type": "module",
   "homepage": "https://github.com/maifeeulasad/antd-crud-table",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maifeeulasad/antd-crud-table.git"
+  },
   "keywords": [
     "antd",
     "react",
