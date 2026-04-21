@@ -1,4 +1,4 @@
-import './App.css';
+import './../App.css';
 import { message, Button } from 'antd';
 import CrudTableLazy from '../../lib/CrudTableLazy';
 import type { CrudColumn } from '../../lib/CrudTable';
