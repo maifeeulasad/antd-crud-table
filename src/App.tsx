@@ -2,10 +2,10 @@ import './App.css';
 import { ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
 
-import LocalStorageExample from './example/e1';
-import ApiBasedExample from './example/e3';
-import StaticDataExample from './example/e2';
-import CustomOperationsExample from './example/e4';
+import LocalStorageExample from './example/LocalStorageExample';
+import ApiBasedExample from './example/ApiBasedExample';
+import StaticDataExample from './example/StaticDataExample';
+import CustomOperationsExample from './example/CustomOperationsExample';
 
 const App = () => (
   <ConfigProvider locale={enUS}>
