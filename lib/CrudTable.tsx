@@ -2,6 +2,7 @@ import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
+import { Rule } from 'antd/es/form';
 import { useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
@@ -20,7 +21,7 @@ interface CrudColumn<T extends DataType> extends ProColumns<T> {
     required?: boolean;
     component?: React.ReactNode;
     transform?: (value: any) => any;
-    rules?: any[];
+    rules?: Rule[];
   };
   fieldEditable?: boolean;
   searchable?: boolean;
