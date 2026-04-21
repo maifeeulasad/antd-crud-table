@@ -154,7 +154,7 @@ const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation
 
 // Static data operations
 const createStaticOperations = <T>(staticData: T[], keyField: keyof T): CrudOperation<T> => {
-  let data = [...staticData];
+  const data = [...staticData];
   let nextId = Math.max(...data.map(item => Number(item[keyField]) || 0)) + 1;
 
   return {
