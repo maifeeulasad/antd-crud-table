@@ -1,5 +1,4 @@
 import './App.css'
-import CrudTableExperimentalLazy from '../lib/CrudTableExperimentalLazy';
 import { useLocalStorageCrud } from '../lib/hooks/useLocalStorageCrud';
 import { exportToCSV, exportToJSON } from '../lib/utils/exportData';
 import { ConfigProvider, Button, Space, message } from 'antd';
@@ -97,7 +96,7 @@ const StaticDataExample = () => (
   <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 1: Static Data (In-Memory)</h2>
     <p style={{ color: '#666', marginBottom: '1rem' }}>Data resets on page refresh. Perfect for demos and prototypes.</p>
-    <CrudTableExperimentalLazy<User>
+    <CrudTableLazy<User>
       title="User Management (Static Data)"
       rowKey="id"
       defaultPageSize={5}
@@ -134,7 +133,7 @@ const ApiBasedExample = () => (
   <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 2: API Integration</h2>
     <p style={{ color: '#666', marginBottom: '1rem' }}>Connect to any REST API with automatic request/response transformation.</p>
-    <CrudTableExperimentalLazy<User>
+    <CrudTableLazy<User>
       title="User Management (API Integration)"
       rowKey="id"
       defaultPageSize={5}
@@ -197,7 +196,7 @@ const CustomOperationsExample = () => (
   <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 3: Custom Operations (IndexedDB, GraphQL, etc.)</h2>
     <p style={{ color: '#666', marginBottom: '1rem' }}>Full control with custom CRUD operations for any data source.</p>
-    <CrudTableExperimentalLazy<User>
+    <CrudTableLazy<User>
       title="User Management (Custom Operations)"
       rowKey="id"
       defaultPageSize={5}
@@ -313,7 +312,7 @@ const LocalStorageExample = () => {
           window.location.reload();
         }} danger>Reset Data</Button>
       </Space>
-      <CrudTableExperimentalLazy<User>
+      <CrudTableLazy<User>
         title="User Management (LocalStorage)"
         rowKey="id"
         defaultPageSize={5}
@@ -365,88 +364,6 @@ const LocalStorageExample = () => {
   );
 };
 
-// Example 5: Old implementation (for reference)
-let data: User[] = [
-  { id: 1, name: 'Jane Smith 1', age: 30, createdAt: '2023-01-01', status: 'active', isAdmin: true },
-  { id: 2, name: 'Jane Smith 2', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 3, name: 'Jane Smith 3', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 4, name: 'Jane Smith 4', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 5, name: 'Jane Smith 5', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 6, name: 'Jane Smith 6', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 7, name: 'Jane Smith 7', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 8, name: 'Jane Smith 8', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 9, name: 'Jane Smith 9', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 10, name: 'Jane Smith 10', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 11, name: 'Jane Smith 11', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-  { id: 12, name: 'Jane Smith 12', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
-]
-
-class UserService {
-  static async getList(): Promise<{ data: User[]; total: number }> {
-    return {
-      data,
-      total: data.length,
-    }
-  }
-
-  static async create(itemData: Partial<User>) {
-    return itemData as User;
-  }
-
-  static async update(id: number, itemData: Partial<User>) {
-    return { id, ...itemData } as User;
-  }
-
-  static async delete(id: number) {
-    data = data.filter((item) => item.id !== id);
-  }
-}
-
-const OldUserTableExample = () => (
-  <div style={{ marginBottom: '2rem', border: '1px solid #999', padding: '1rem', borderRadius: '8px', opacity: 0.8 }}>
-    <h2>Example 5: Legacy Service-Based Implementation</h2>
-    <p style={{ color: '#666', marginBottom: '1rem' }}>Original implementation using service pattern.</p>
-    <CrudTableLazy<User>
-      title="User Management (Legacy)"
-      rowKey="id"
-      service={UserService}
-      columns={[
-        {
-          dataIndex: 'name',
-          title: 'Name',
-          fieldType: 'string',
-          formConfig: { required: true },
-        },
-        {
-          dataIndex: 'age',
-          title: 'Age',
-          fieldType: 'number',
-          fieldEditable: false,
-        },
-        {
-          dataIndex: 'createdAt',
-          title: 'Created At',
-          fieldType: 'date',
-        },
-        {
-          dataIndex: 'status',
-          title: 'Status',
-          fieldType: 'enum',
-          enumOptions: {
-            active: { text: 'Active' },
-            inactive: { text: 'Inactive' },
-          },
-        },
-        {
-          dataIndex: 'isAdmin',
-          title: 'Administrator',
-          fieldType: 'boolean',
-        },
-      ]}
-    />
-  </div>
-);
-
 const App = () => (
   <ConfigProvider locale={enUS}>
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -461,7 +378,6 @@ const App = () => (
       <StaticDataExample />
       <ApiBasedExample />
       <CustomOperationsExample />
-      <OldUserTableExample />
 
       <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
         <h3>Features</h3>
