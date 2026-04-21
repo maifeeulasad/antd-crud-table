@@ -4,7 +4,6 @@ import type { CrudTableConfig, DataType } from './CrudTable';
 const CrudTable = lazy(() => import('./CrudTable'));
 
 const CrudTableLazy = <T extends DataType>(props: CrudTableConfig<T>) => {
-  const { columns, service, rowKey, title, defaultPageSize = 5 } = props;
   return (
     <Suspense
       fallback={
@@ -14,14 +13,11 @@ const CrudTableLazy = <T extends DataType>(props: CrudTableConfig<T>) => {
       }
     >
       <CrudTable
-        columns={columns as any}
-        service={service as any}
-        rowKey={rowKey as string}
-        title={title}
-        defaultPageSize={defaultPageSize}
+        {...(props as any)}
       />
     </Suspense>
   );
 };
 
 export default CrudTableLazy;
+export type { CrudTableConfig, DataType };
