@@ -3,6 +3,20 @@ import react from '@vitejs/plugin-react-swc';
 import dts from 'vite-plugin-dts';
 import path from 'path';
 
+const peerDeps = [
+  'react',
+  'react-dom',
+  'react/jsx-runtime',
+  'antd',
+  '@ant-design/icons',
+  '@ant-design/pro-components',
+  'date-fns',
+  'dayjs',
+];
+
+const isExternal = (id: string) =>
+  peerDeps.some((pkg) => id === pkg || id.startsWith(`${pkg}/`));
+
 export default defineConfig({
   plugins: [
     react(),
@@ -26,7 +40,7 @@ export default defineConfig({
     },
     outDir: 'dist',
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: isExternal,
       output: {
         globals: {
           react: 'React',
