@@ -22,6 +22,7 @@
     "build:static": "tsc -b && vite build",
     "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
   "peerDependencies": {
