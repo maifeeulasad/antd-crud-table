@@ -4,21 +4,21 @@
 
 `antd-crud-table` is a highly flexible and powerful React library built using `antd` and `@ant-design/pro-components`. It provides both a declarative component-based approach and a modern hook-based architecture for creating editable, paginated tables with form support, data fetching, sorting, filtering, and custom rendering. Perfect for building admin dashboards and data management UIs with minimal boilerplate.
 
-## 🆕 Enhanced 📋 API Reference
+## 📋 API Reference
 
-### CrudTableExperimental Props (Enhanced)
+### CrudTable Props
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `title` | `string` | Table header title |
 | `rowKey` | `keyof T` | Unique identifier for each row |
-| `columns` | `CrudColumn<T>[]` | Column definitions with enhanced features |
+| `columns` | `CrudColumn<T>[]` | Column definitions with |
 | `hookConfig` | `UseCrudTableConfig<T>` | Hook configuration for data operations |
 | `defaultPageSize?` | `number` | Initial page size (default: 10) |
 | `enableBulkOperations?` | `boolean` | Enable bulk select/delete (default: false) |
 | `customActions?` | `(record, actions) => ReactNode[]` | Custom row actions |ased Architecture**
 
-The experimental version introduces a powerful hook-based architecture with multiple data source strategies:
+Latest version introduces a powerful hook-based architecture with multiple data source strategies:
 - **Static Data**: Perfect for prototypes and small datasets
 - **API Integration**: REST API support with automatic request handling
 - **Custom Operations**: Full control with GraphQL, IndexedDB, or custom logic
@@ -43,14 +43,14 @@ npm install react react-dom antd @ant-design/pro-components
 
 Choose your preferred approach:
 
-### Modern Approach (Experimental) - Hook-Based
+### Modern Approach - Hook-Based
 
 ```tsx
-import { CrudTableExperimental } from 'antd-crud-table';
+import { CrudTable } from 'antd-crud-table';
 
 // Static data example
 const UserManagement = () => (
-  <CrudTableExperimental<User>
+  <CrudTable<User>
     title="User Management"
     rowKey="id"
     hookConfig={{
@@ -110,13 +110,13 @@ const UserTable = () => (
 
 ---
 
-## 🎯 **Enhanced Features (Experimental)**
+## 🎯 **Enhanced Features**
 
 ### 1. **Multiple Data Source Strategies**
 
 #### Static Data (Perfect for Prototyping)
 ```tsx
-<CrudTableExperimental
+<CrudTable
   hookConfig={{
     staticData: mockUsers,
     optimisticUpdates: true,
@@ -127,7 +127,7 @@ const UserTable = () => (
 
 #### API Integration (Production Ready)
 ```tsx
-<CrudTableExperimental
+<CrudTable
   hookConfig={{
     api: {
       baseUrl: 'https://api.example.com',
@@ -164,7 +164,7 @@ const UserTable = () => (
 
 #### Custom Operations (Maximum Flexibility)
 ```tsx
-<CrudTableExperimental
+<CrudTable
   hookConfig={{
     operations: {
       getList: async (params) => {
@@ -188,7 +188,7 @@ const UserTable = () => (
 
 #### Bulk Operations
 ```tsx
-<CrudTableExperimental
+<CrudTable
   enableBulkOperations={true}
   // Automatically adds bulk select and delete functionality
 />
@@ -196,7 +196,7 @@ const UserTable = () => (
 
 #### Custom Actions
 ```tsx
-<CrudTableExperimental
+<CrudTable
   customActions={(record, actions) => [
     <Button
       key="export"
@@ -214,7 +214,7 @@ const UserTable = () => (
 />
 ```
 
-#### Enhanced Validation
+#### Validation
 ```tsx
 columns={[
   {
@@ -452,7 +452,7 @@ const UserTable = () => {
   const userCrud = useUserCrud();
   
   return (
-    <CrudTableExperimental
+    <CrudTable
       title="Users" 
       rowKey="id"
       hookConfig={userCrud}
@@ -465,7 +465,7 @@ const OfflineTable = () => {
   const offlineCrud = useLocalStorageCrud<User>('users-cache', 'id', mockUsers);
   
   return (
-    <CrudTableExperimental
+    <CrudTable
       title="Offline Users" 
       rowKey="id"
       hookConfig={offlineCrud}
@@ -482,7 +482,7 @@ const RealtimeTable = () => {
   );
   
   return (
-    <CrudTableExperimental
+    <CrudTable
       title="Realtime Users" 
       rowKey="id"
       hookConfig={realtimeCrud}
@@ -506,8 +506,6 @@ const RealtimeTable = () => {
 - 🧰 **Full TypeScript Support** with generics
 - 🔐 **Field-Level Edit Controls** 
 - 🧼 **Professional UI** with row differentiation
-
-### Enhanced Features (Experimental)
 - 🪝 **Hook-Based Architecture** with `useCrudTable`
 - 🔌 **Multiple Data Sources**: Static, API, or custom operations
 - ⚡ **Built-in State Management**: Loading, error states, optimistic updates
@@ -522,7 +520,7 @@ const RealtimeTable = () => {
 
 ## API Reference
 
-### CrudTableV2 Props (Enhanced)
+### CrudTable Props
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -534,7 +532,7 @@ const RealtimeTable = () => {
 | `enableBulkOperations?` | `boolean` | Enable bulk select/delete (default: false) |
 | `customActions?` | `(record, actions) => ReactNode[]` | Custom row actions |
 
-### CrudColumn<T> (Enhanced)
+### CrudColumn<T>
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -588,16 +586,6 @@ Choose one approach:
 }
 ```
 
-### Legacy CrudTable Props (Original)
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `columns` | `CrudColumn<T>[]` | Column definitions |
-| `service` | `CrudService<T>` | Service object with CRUD methods |
-| `rowKey` | `keyof T` | Unique key for each row |
-| `title` | `string` | Table header title |
-| `defaultPageSize?` | `number` | Optional default page size (default: 5) |
-
 ---
 
 ## 📁 Styling
@@ -617,62 +605,6 @@ Customize row striping using `.row-differentiator` in `CrudTable.css`:
 - Date fields are handled via `dayjs` in the form and `date-fns` for display.
 - All requests are async with error handling via `antd`'s `message` API.
 - Add your own export logic or additional toolbar buttons as needed.
-
----
-
-## 🔄 Migration Guide
-
-### Upgrading from Original to Experimental
-
-**Original (Service-Based):**
-```tsx
-<CrudTable
-  title="Users"
-  rowKey="id"
-  service={UserService}
-  columns={columns}
-/>
-```
-
-**Experimental (Hook-Based):**
-```tsx
-<CrudTableExperimental
-  title="Users" 
-  rowKey="id"
-  hookConfig={{
-    operations: UserService, // Reuse existing service
-    // Or choose new approaches:
-    // staticData: users,
-    // api: { baseUrl: '/api' },
-  }}
-  columns={columns}
-/>
-```
-
-### Breaking Changes in Experimental
-- ✅ **Fully backward compatible**: Original components still work
-- 🔄 **New import**: `CrudTableExperimental` for enhanced version
-- 🎛️ **Service → hookConfig**: More flexible configuration
-- 📊 **Enhanced props**: Additional optional features
-
-### Lazy Loading Options
-
-For better performance with code splitting:
-
-```tsx
-// Standard lazy loading
-import { CrudTableLazy } from 'antd-crud-table';
-
-// Experimental lazy loading  
-import { CrudTableExperimentalLazy } from 'antd-crud-table';
-
-<CrudTableExperimentalLazy
-  title="Users"
-  rowKey="id" 
-  hookConfig={hookConfig}
-  columns={columns}
-/>
-```
 
 ---
 
