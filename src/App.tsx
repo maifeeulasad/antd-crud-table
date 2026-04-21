@@ -1,8 +1,11 @@
 import './App.css'
 import CrudTableExperimentalLazy from '../lib/CrudTableExperimentalLazy';
-import { ConfigProvider, Button } from 'antd';
+import { useLocalStorageCrud } from '../lib/hooks/useLocalStorageCrud';
+import { exportToCSV, exportToJSON } from '../lib/utils/exportData';
+import { ConfigProvider, Button, Space, message } from 'antd';
 import enUS from 'antd/locale/en_US';
 import CrudTableLazy from '../lib/CrudTableLazy';
+import type { CrudColumn } from '../lib/CrudTable';
 
 interface User {
   id: number;
@@ -12,9 +15,12 @@ interface User {
   status: 'active' | 'inactive';
   isAdmin: boolean;
   email?: string;
+  phone?: string;
+  website?: string;
+  customField?: string;
 }
 
-const mockUsers: User[] = [
+const initialUsers: User[] = [
   { id: 1, name: 'Jane Smith 1', age: 30, createdAt: '2023-01-01T10:00:00Z', status: 'active', isAdmin: true, email: 'jane1@example.com' },
   { id: 2, name: 'John Doe 2', age: 25, createdAt: '2023-02-01T10:00:00Z', status: 'inactive', isAdmin: false, email: 'john2@example.com' },
   { id: 3, name: 'Alice Johnson 3', age: 28, createdAt: '2023-03-01T10:00:00Z', status: 'active', isAdmin: false, email: 'alice3@example.com' },
@@ -25,17 +31,79 @@ const mockUsers: User[] = [
   { id: 8, name: 'Frank Miller 8', age: 31, createdAt: '2023-08-01T10:00:00Z', status: 'inactive', isAdmin: false, email: 'frank8@example.com' },
 ];
 
+const mockUsers: User[] = [...initialUsers];
+
+const userColumns: CrudColumn<User>[] = [
+  {
+    dataIndex: 'name',
+    title: 'Full Name',
+    fieldType: 'string',
+    formConfig: {
+      required: true,
+      rules: [
+        { required: true, message: 'Name is required' },
+        { min: 2, message: 'Name must be at least 2 characters' }
+      ]
+    },
+  },
+  {
+    dataIndex: 'email',
+    title: 'Email',
+    fieldType: 'string',
+    formConfig: {
+      required: true,
+      rules: [
+        { required: true, message: 'Email is required' },
+        { type: 'email', message: 'Please enter a valid email' }
+      ]
+    },
+  },
+  {
+    dataIndex: 'age',
+    title: 'Age',
+    fieldType: 'number',
+    formConfig: {
+      rules: [
+        { type: 'number', min: 18, max: 99, message: 'Age must be between 18 and 99' }
+      ]
+    },
+  },
+  {
+    dataIndex: 'createdAt',
+    title: 'Created At',
+    fieldType: 'date',
+    searchable: false,
+  },
+  {
+    dataIndex: 'status',
+    title: 'Status',
+    fieldType: 'enum',
+    enumOptions: {
+      active: { text: 'Active', color: 'green' },
+      inactive: { text: 'Inactive', color: 'orange' },
+    },
+    formConfig: { required: true },
+  },
+  {
+    dataIndex: 'isAdmin',
+    title: 'Administrator',
+    fieldType: 'boolean',
+    searchable: false,
+  },
+];
+
 // Example 1: Static Data Approach
 const StaticDataExample = () => (
-  <div style={{ marginBottom: '2rem' }}>
-    <h2>Example 1: Static Data</h2>
+  <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
+    <h2>Example 1: Static Data (In-Memory)</h2>
+    <p style={{ color: '#666', marginBottom: '1rem' }}>Data resets on page refresh. Perfect for demos and prototypes.</p>
     <CrudTableExperimentalLazy<User>
       title="User Management (Static Data)"
       rowKey="id"
       defaultPageSize={5}
       enableBulkOperations={true}
       hookConfig={{
-        staticData: mockUsers,
+        staticData: [...mockUsers],
         optimisticUpdates: true,
         onSuccess: (operation, data) => {
           console.log(`${operation} completed:`, data);
@@ -44,85 +112,28 @@ const StaticDataExample = () => (
           console.error(`${operation} failed:`, error);
         },
       }}
-      // @ts-expect-error todo: fix actions type later
-      customActions={(record, actions) => [
+      customActions={(record) => [
         <Button
-          key="custom"
+          key="view"
           type="link"
           size="small"
           onClick={() => {
-            console.log('Custom action for:', record);
+            message.info(`Viewing: ${record.name}`);
           }}
         >
-          Custom
+          View
         </Button>
       ]}
-      columns={[
-        {
-          dataIndex: 'name',
-          title: 'Full Name',
-          fieldType: 'string',
-          formConfig: {
-            required: true,
-            rules: [
-              { required: true, message: 'Name is required' },
-              { min: 2, message: 'Name must be at least 2 characters' }
-            ]
-          },
-        },
-        {
-          dataIndex: 'email',
-          title: 'Email',
-          fieldType: 'string',
-          formConfig: {
-            required: true,
-            rules: [
-              { required: true, message: 'Email is required' },
-              { type: 'email', message: 'Please enter a valid email' }
-            ]
-          },
-        },
-        {
-          dataIndex: 'age',
-          title: 'Age',
-          fieldType: 'number',
-          formConfig: {
-            rules: [
-              { type: 'number', min: 18, max: 99, message: 'Age must be between 18 and 99' }
-            ]
-          },
-        },
-        {
-          dataIndex: 'createdAt',
-          title: 'Created At',
-          fieldType: 'date',
-          searchable: false,
-        },
-        {
-          dataIndex: 'status',
-          title: 'Status',
-          fieldType: 'enum',
-          enumOptions: {
-            active: { text: 'Active', color: 'green' },
-            inactive: { text: 'Inactive', color: 'orange' },
-          },
-          formConfig: { required: true },
-        },
-        {
-          dataIndex: 'isAdmin',
-          title: 'Administrator',
-          fieldType: 'boolean',
-          searchable: false,
-        },
-      ]}
+      columns={userColumns}
     />
   </div>
 );
 
 // Example 2: API-based Approach
 const ApiBasedExample = () => (
-  <div style={{ marginBottom: '2rem' }}>
+  <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 2: API Integration</h2>
+    <p style={{ color: '#666', marginBottom: '1rem' }}>Connect to any REST API with automatic request/response transformation.</p>
     <CrudTableExperimentalLazy<User>
       title="User Management (API Integration)"
       rowKey="id"
@@ -138,13 +149,9 @@ const ApiBasedExample = () => (
           },
           transform: {
             response: (data) => ({
-              data: Array.isArray(data) ? data.slice(0, 5) : [data], // Limit to 5 for demo
+              data: Array.isArray(data) ? data.slice(0, 5) : [data],
               total: Array.isArray(data) ? Math.min(data.length, 5) : 1,
               success: true,
-            }),
-            request: (data) => ({
-              ...data,
-              // Transform data before sending to API
             }),
           },
         },
@@ -172,11 +179,13 @@ const ApiBasedExample = () => (
           dataIndex: 'phone',
           title: 'Phone',
           fieldType: 'string',
+          searchable: false,
         },
         {
           dataIndex: 'website',
           title: 'Website',
           fieldType: 'string',
+          searchable: false,
         },
       ]}
     />
@@ -185,8 +194,9 @@ const ApiBasedExample = () => (
 
 // Example 3: Custom Operations Approach
 const CustomOperationsExample = () => (
-  <div style={{ marginBottom: '2rem' }}>
-    <h2>Example 3: Custom Operations</h2>
+  <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
+    <h2>Example 3: Custom Operations (IndexedDB, GraphQL, etc.)</h2>
+    <p style={{ color: '#666', marginBottom: '1rem' }}>Full control with custom CRUD operations for any data source.</p>
     <CrudTableExperimentalLazy<User>
       title="User Management (Custom Operations)"
       rowKey="id"
@@ -195,11 +205,9 @@ const CustomOperationsExample = () => (
         operations: {
           getList: async (params) => {
             console.log('Custom getList called with:', params);
-            // Custom logic here - could be IndexedDB, localStorage, etc.
             const filteredData = mockUsers.filter(user =>
               params.name ? user.name.toLowerCase().includes(params.name.toLowerCase()) : true
             );
-
             return {
               data: filteredData.slice(0, params.pageSize || 5),
               total: filteredData.length,
@@ -213,21 +221,16 @@ const CustomOperationsExample = () => (
               ...data,
               createdAt: new Date().toISOString(),
             } as User;
-
-            // Custom create logic (e.g., save to IndexedDB)
             return newUser;
           },
           update: async (id, data) => {
             console.log('Custom update called:', id, data);
-            // Custom update logic
             return { id, ...data } as User;
           },
           delete: async (id) => {
             console.log('Custom delete called:', id);
-            // Custom delete logic
           },
         },
-        enableCache: true,
         optimisticUpdates: false,
       }}
       columns={[
@@ -255,10 +258,9 @@ const CustomOperationsExample = () => (
           dataIndex: 'customField',
           title: 'Custom Render',
           fieldType: 'custom',
-          // @ts-expect-error todo: fix value type later
-          customRender: (value, record) => (
-            <span style={{ color: record.isAdmin ? 'blue' : 'gray' }}>
-              {record.isAdmin ? '👑 Admin' : '👤 User'}
+          customRender: (_, record) => (
+            <span style={{ color: record.isAdmin ? '#1890ff' : '#999' }}>
+              {record.isAdmin ? 'Admin' : 'User'}
             </span>
           ),
           searchable: false,
@@ -269,17 +271,102 @@ const CustomOperationsExample = () => (
   </div>
 );
 
-// Example 4: Old implmentation (for reference)
-interface User {
-  id: number;
-  name: string;
-  age: number;
-  createdAt: string;
-  status: 'active' | 'inactive';
-  isAdmin: boolean;
-}
+// Example 4: LocalStorage Persistence
+const LocalStorageExample = () => {
+  const storageKey = 'antd-crud-demo-users';
+  const crud = useLocalStorageCrud<User>('id', storageKey, initialUsers, {
+    defaultPageSize: 5,
+    optimisticUpdates: true,
+    onSuccess: (operation, data) => {
+      console.log(`LocalStorage ${operation}:`, data);
+    },
+  });
 
-const data: User[] = [
+  const handleExport = (format: 'csv' | 'json') => {
+    const data = crud.state.data;
+    const columns = userColumns.map(col => ({
+      title: String(col.title),
+      dataIndex: String(col.dataIndex),
+      fieldType: col.fieldType,
+      enumOptions: col.enumOptions,
+    }));
+    if (format === 'csv') {
+      exportToCSV({ data, columns, filename: 'users-export' });
+    } else {
+      exportToJSON({ data, columns, filename: 'users-export' });
+    }
+    message.success(`Exported to ${format.toUpperCase()}`);
+  };
+
+  return (
+    <div style={{ marginBottom: '2rem', border: '1px solid #52c41a', padding: '1rem', borderRadius: '8px' }}>
+      <h2>Example 4: LocalStorage Persistence</h2>
+      <p style={{ color: '#666', marginBottom: '1rem' }}>
+        Data persists across page refreshes using browser localStorage.
+        Changes you make will be saved!
+      </p>
+      <Space style={{ marginBottom: '1rem' }}>
+        <Button onClick={() => handleExport('csv')}>Export CSV</Button>
+        <Button onClick={() => handleExport('json')}>Export JSON</Button>
+        <Button onClick={() => {
+          localStorage.removeItem(storageKey);
+          window.location.reload();
+        }} danger>Reset Data</Button>
+      </Space>
+      <CrudTableExperimentalLazy<User>
+        title="User Management (LocalStorage)"
+        rowKey="id"
+        defaultPageSize={5}
+        enableBulkOperations={true}
+        hookConfig={{
+          operations: {
+            getList: async (params) => {
+              const data = crud.state.data;
+              const filtered = data.filter((item: User) =>
+                params.name ? item.name.toLowerCase().includes(params.name.toLowerCase()) : true
+              );
+              const start = ((params.current || 1) - 1) * (params.pageSize || 10);
+              return {
+                data: filtered.slice(start, start + (params.pageSize || 10)),
+                total: filtered.length,
+                success: true,
+              };
+            },
+            create: async (data) => {
+              const newItem = { id: Date.now(), ...data, createdAt: new Date().toISOString() } as User;
+              await crud.create(newItem);
+              return newItem;
+            },
+            update: async (id, data) => {
+              await crud.update(id, data);
+              return { id, ...data } as User;
+            },
+            delete: async (id) => {
+              await crud.delete(id);
+            },
+          },
+          optimisticUpdates: true,
+        }}
+        customActions={(record) => [
+          <Button
+            key="view"
+            type="link"
+            size="small"
+            onClick={() => {
+              message.info(`Email: ${record.email}`);
+            }}
+          >
+            View Email
+          </Button>
+        ]}
+        columns={userColumns}
+      />
+    </div>
+  );
+};
+
+// Example 5: Old implementation (for reference)
+let data: User[] = [
   { id: 1, name: 'Jane Smith 1', age: 30, createdAt: '2023-01-01', status: 'active', isAdmin: true },
   { id: 2, name: 'Jane Smith 2', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
   { id: 3, name: 'Jane Smith 3', age: 25, createdAt: '2023-02-01', status: 'inactive', isAdmin: false },
@@ -295,38 +382,33 @@ const data: User[] = [
 ]
 
 class UserService {
-  // @ts-ignore
-  static async getList(params: any): Promise<{ data: User[]; total: number }> {
-    // todo
+  static async getList(): Promise<{ data: User[]; total: number }> {
     return {
       data,
       total: data.length,
     }
   }
 
-  static async create(data: Partial<User>) {
-    // todo
-    return data as User;
+  static async create(itemData: Partial<User>) {
+    return itemData as User;
   }
 
-  static async update(id: number, data: Partial<User>) {
-    // todo
-    return { id, ...data } as User;
+  static async update(id: number, itemData: Partial<User>) {
+    return { id, ...itemData } as User;
   }
 
-  // @ts-ignore
   static async delete(id: number) {
-    // todo
+    data = data.filter((item) => item.id !== id);
   }
 }
 
 const OldUserTableExample = () => (
-  <div style={{ marginBottom: '2rem' }}>
-    <h2>Example 4: User Management(Old Implementation)</h2>
+  <div style={{ marginBottom: '2rem', border: '1px solid #999', padding: '1rem', borderRadius: '8px', opacity: 0.8 }}>
+    <h2>Example 5: Legacy Service-Based Implementation</h2>
+    <p style={{ color: '#666', marginBottom: '1rem' }}>Original implementation using service pattern.</p>
     <CrudTableLazy<User>
-      title="User Management(Old Implementation)"
+      title="User Management (Legacy)"
       rowKey="id"
-      // defaultPageSize={10}
       service={UserService}
       columns={[
         {
@@ -340,11 +422,6 @@ const OldUserTableExample = () => (
           title: 'Age',
           fieldType: 'number',
           fieldEditable: false,
-        },
-        {
-          dataIndex: 'age2',
-          title: 'Age2',
-          fieldType: 'number',
         },
         {
           dataIndex: 'createdAt',
@@ -372,13 +449,33 @@ const OldUserTableExample = () => (
 
 const App = () => (
   <ConfigProvider locale={enUS}>
-    <div style={{ padding: '2rem' }}>
-      <h1>Enhanced CRUD Table Examples</h1>
-      <p>This demonstrates the new hook-based approach with three different data source strategies:</p>
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>AntD CRUD Table</h1>
+        <p style={{ color: '#666', fontSize: '1.1rem' }}>
+          A powerful React library for creating editable, paginated tables with form support
+        </p>      
+      </div>
+
+      <LocalStorageExample />
       <StaticDataExample />
       <ApiBasedExample />
       <CustomOperationsExample />
       <OldUserTableExample />
+
+      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
+        <h3>Features</h3>
+        <ul>
+          <li><strong>Multiple Data Sources:</strong> Static data, REST API, localStorage, IndexedDB, GraphQL</li>
+          <li><strong>Field Types:</strong> String, Number, Date, Boolean, Enum, Custom</li>
+          <li><strong>Operations:</strong> Create, Read, Update, Delete with validation</li>
+          <li><strong>Export:</strong> CSV, JSON, XLSX support</li>
+          <li><strong>Bulk Operations:</strong> Multi-select and batch delete</li>
+          <li><strong>Custom Actions:</strong> Add your own row-level buttons</li>
+          <li><strong>Optimistic Updates:</strong> Instant UI feedback</li>
+          <li><strong>Full TypeScript:</strong> Complete type definitions</li>
+        </ul>
+      </div>
     </div>
   </ConfigProvider>
 );
