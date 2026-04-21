@@ -20,8 +20,10 @@ interface CrudColumn<T extends DataType> extends ProColumns<T> {
     required?: boolean;
     component?: React.ReactNode;
     transform?: (value: any) => any;
+    rules?: any[];
   };
   fieldEditable?: boolean;
+  searchable?: boolean;
 }
 
 interface CrudTableConfig<T extends DataType> {
