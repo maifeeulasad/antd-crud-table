@@ -1,4 +1,4 @@
-import './App.css';
+import './../App.css';
 import { useLocalStorageCrud } from '../../lib/hooks/useLocalStorageCrud';
 import { exportToCSV, exportToJSON } from '../../lib/utils/exportData';
 import { Button, Space, message } from 'antd';
