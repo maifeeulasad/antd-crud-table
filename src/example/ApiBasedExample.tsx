@@ -1,4 +1,4 @@
-import './App.css';
+import './../App.css';
 import CrudTableLazy from '../../lib/CrudTableLazy';
 
 interface User {
