@@ -19,6 +19,8 @@ export default defineConfig({
         path.resolve(__dirname, 'lib/CrudTable.tsx'),
         path.resolve(__dirname, 'lib/CrudTableLazy.tsx'),
         path.resolve(__dirname, 'lib/hooks/useCrudTable.ts'),
+        path.resolve(__dirname, 'lib/hooks/useLocalStorageCrud.ts'),
+        path.resolve(__dirname, 'lib/utils/exportData.ts'),
       ],
       formats: ['es', 'cjs']
     },
