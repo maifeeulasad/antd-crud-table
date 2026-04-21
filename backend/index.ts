@@ -13,7 +13,7 @@ interface User {
 const app = express();
 app.use(bodyParser.json());
 
-let users: User[] = [
+const users: User[] = [
   { id: 1, name: 'Jane Smith 1', age: 30, createdAt: '2023-01-01', status: 'active', isAdmin: true },
 ];
 
