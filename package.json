@@ -63,6 +63,17 @@
       "types": "./dist/CrudTableLazy.d.ts",
       "import": "./dist/CrudTableLazy.js",
       "require": "./dist/CrudTableLazy.cjs"
+    },
+    "./hooks/useCrudTable": {
+      "types": "./dist/hooks/useCrudTable.d.ts",
+      "import": "./dist/useCrudTable.js",
+      "require": "./dist/useCrudTable.cjs"
+    },
+    "./hooks/useLocalStorageCrud": {
+      "types": "./dist/hooks/useLocalStorageCrud.d.ts"
+    },
+    "./utils/exportData": {
+      "types": "./dist/utils/exportData.d.ts"
     }
   },
   "files": [
