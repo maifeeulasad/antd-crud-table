@@ -1,27 +1,27 @@
 import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
-import { Rule } from 'antd/es/form';
-import { useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
 import dayjs from 'dayjs';
 
 import './CrudTable.css';
+import { useCrudTable, type UseCrudTableConfig, type CrudTableActions } from './hooks/useCrudTable';
 
 type DataType = Record<string, any>;
 type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
 
 interface CrudColumn<T extends DataType> extends ProColumns<T> {
   fieldType?: FieldType;
-  enumOptions?: Record<string, { text: string;[key: string]: any }>;
+  enumOptions?: Record<string, { text: string; [key: string]: any }>;
   customRender?: (value: any, record: T) => React.ReactNode;
   formConfig?: {
     required?: boolean;
     component?: React.ReactNode;
     transform?: (value: any) => any;
-    rules?: Rule[];
+    rules?: any[];
   };
   fieldEditable?: boolean;
   searchable?: boolean;
@@ -29,29 +29,46 @@ interface CrudColumn<T extends DataType> extends ProColumns<T> {
 
 interface CrudTableConfig<T extends DataType> {
   columns: CrudColumn<T>[];
-  service: {
-    getList: (params: any) => Promise<{ data: T[]; total: number }>;
-    create: (data: Partial<T>) => Promise<T>;
-    update: (id: any, data: Partial<T>) => Promise<T>;
-    delete: (id: any) => Promise<void>;
-  };
   rowKey: keyof T;
   title: string;
   defaultPageSize?: number;
+  
+  // Hook configuration - choose one approach
+  hookConfig: UseCrudTableConfig<T>;
+  
+  // Additional UI configuration
+  enableBulkOperations?: boolean;
+  enableColumnSettings?: boolean;
+  enableExport?: boolean;
+  customActions?: (record: T, actions: CrudTableActions<T>) => React.ReactNode[];
 }
 
 const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
-  const actionRef = useRef<ActionType>(null);
-  const { columns, service, rowKey, title, defaultPageSize = 5 } = config;
+  const { columns, rowKey, title, defaultPageSize = 10, hookConfig, enableBulkOperations = false, customActions } = config;
+  
+    // Use the new hook
+  const crudActions = useCrudTable(rowKey, {
+    defaultPageSize,
+    ...hookConfig
+  });
+  
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
 
-  let enhancedColumns: ProColumns<T>[] = (columns || []).map((col) => {
+  // Load data on mount
+  useEffect(() => {
+    crudActions.refresh();
+  }, []);
+
+  // Enhanced columns with better type handling
+  const enhancedColumns: ProColumns<T>[] = columns.map((col) => {
     const baseColumn: ProColumns<T> = {
       ...col,
       dataIndex: col.dataIndex as string,
       title: col.title,
+      search: col.searchable !== false, // Default to searchable
     };
 
     switch (col.fieldType) {
@@ -59,22 +76,39 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         return {
           ...baseColumn,
           valueType: 'dateTime',
-          render: (_, record) => (
-            <span>
-              {format(parseISO(record[col.dataIndex as string]), 'yyyy-MM-dd HH:mm')}
-            </span>
-          ),
+          render: (_, record) => {
+            const value = record[col.dataIndex as string];
+            if (!value) return '-';
+            try {
+              return (
+                <span>
+                  {format(parseISO(value), 'yyyy-MM-dd HH:mm')}
+                </span>
+              );
+            } catch {
+              return <span>{value}</span>;
+            }
+          },
         };
       case 'enum':
         return {
           ...baseColumn,
           valueType: 'select',
           valueEnum: col.enumOptions,
+          render: (_, record) => {
+            const value = record[col.dataIndex as string];
+            const option = col.enumOptions?.[value];
+            return option ? <Tag color={option.color}>{option.text}</Tag> : value;
+          },
         };
       case 'number':
         return {
           ...baseColumn,
           valueType: 'digit',
+          render: (_, record) => {
+            const value = record[col.dataIndex as string];
+            return typeof value === 'number' ? value.toLocaleString() : value;
+          },
         };
       case 'boolean':
         return {
@@ -95,20 +129,36 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         return baseColumn;
     }
   });
+
+  // Add actions column
   enhancedColumns.push({
     title: 'Actions',
     valueType: 'option',
-    render: (_, record: T) => [
-      <Button key="edit" type="primary" onClick={() => openModal(record)}>
-        Edit
-      </Button>,
-      <Button key="delete" type="primary" danger onClick={async () => {
-        await service.delete(record[rowKey]);
-        actionRef.current?.reload();
-      }}>
-        Delete
-      </Button>,
-    ],
+    width: 200,
+    render: (_, record: T) => {
+      const defaultActions = [
+        <Button 
+          key="edit" 
+          type="link" 
+          size="small"
+          onClick={() => openModal(record)}
+        >
+          Edit
+        </Button>,
+        <Button 
+          key="delete" 
+          type="link" 
+          size="small"
+          danger 
+          onClick={() => handleDelete(record[rowKey])}
+        >
+          Delete
+        </Button>,
+      ];
+
+      const custom = customActions?.(record, crudActions) || [];
+      return [...defaultActions, ...custom];
+    },
   });
 
   const handleRequest = async (
@@ -118,13 +168,31 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   ) => {
     try {
       const query = {
-        ...params,
+        current: params.current,
+        pageSize: params.pageSize,
         sortBy: Object.keys(sort)[0],
         sortOrder: Object.values(sort)[0],
         ...filter,
+        ...params, // Include search parameters
       };
-      const { data, total } = await service.getList(query);
-      return { data, success: true, total };
+      
+      // The hook handles the actual data fetching
+      const operations = (crudActions as any).operations;
+      if (operations?.getList) {
+        const response = await operations.getList(query);
+        return { 
+          data: response.data, 
+          success: true, 
+          total: response.total 
+        };
+      }
+      
+      // Fallback to current state
+      return { 
+        data: crudActions.state.data, 
+        success: true, 
+        total: crudActions.state.total 
+      };
     } catch (error) {
       message.error('Failed to fetch data');
       return { data: [], success: false, total: 0 };
@@ -138,27 +206,35 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       columns.forEach((col) => {
         const field = col.dataIndex as string;
         if (col.fieldType === 'date' && values[field]) {
-          // @ts-ignore
-          values[field] = dayjs(values[field]);
+          try {
+            // @ts-expect-error partial data type date handling
+            values[field] = dayjs(values[field]);
+          } catch {
+            // Keep original value if parsing fails
+          }
         }
       });
-    form.setFieldsValue(values);
+      form.setFieldsValue(values);
     } else {
-        form.resetFields();
-      }
-      setModalVisible(true);
-    };
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       const transformedValues = { ...values };
 
-      // Handle any transformations like date formatting
+      // Handle transformations
       columns.forEach((col) => {
         const field = col.dataIndex as string;
         if (col.fieldType === 'date' && values[field]) {
-          transformedValues[field] = formatISO(values[field]);
+          try {
+            transformedValues[field] = formatISO(values[field]);
+          } catch {
+            // Keep original value if formatting fails
+          }
         }
         if (col.formConfig?.transform) {
           transformedValues[field] = col.formConfig.transform(values[field]);
@@ -166,37 +242,77 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       });
 
       if (currentRecord && currentRecord[rowKey]) {
-        await service.update(currentRecord[rowKey], transformedValues);
-        message.success('Updated successfully');
+        await crudActions.update(currentRecord[rowKey], transformedValues);
       } else {
-        await service.create(transformedValues);
-        message.success('Created successfully');
+        await crudActions.create(transformedValues);
       }
 
       setModalVisible(false);
-      actionRef.current?.reload();
+      crudActions.actionRef.current?.reload();
     } catch (error) {
-      console.error(error);
-      message.error('Submit failed');
+      console.error('Form validation failed:', error);
     }
   };
 
-  const handleCancel = () => {
-    setModalVisible(false);
+  const handleDelete = async (id: any) => {
+    Modal.confirm({
+      title: 'Are you sure?',
+      content: 'This action cannot be undone.',
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        const success = await crudActions.delete(id);
+        if (success) {
+          crudActions.actionRef.current?.reload();
+        }
+      },
+    });
   };
+
+  const handleBulkDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Please select items to delete');
+      return;
+    }
+
+    Modal.confirm({
+      title: `Delete ${selectedRowKeys.length} items?`,
+      content: 'This action cannot be undone.',
+      okText: 'Yes, Delete All',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        const promises = selectedRowKeys.map(id => crudActions.delete(id));
+        await Promise.allSettled(promises);
+        setSelectedRowKeys([]);
+        crudActions.actionRef.current?.reload();
+      },
+    });
+  };
+
+  const rowSelection = enableBulkOperations ? {
+    selectedRowKeys,
+    onChange: setSelectedRowKeys,
+  } : undefined;
 
   return (
     <ProConfigProvider needDeps intl={enUSIntl}>
       <ProTable<T>
         headerTitle={title}
         rowKey={rowKey as string}
-        // row classname to gray and white
-        rowClassName={(_, index) => (index % 2 === 0 && 'row-differentiator' || '')}
-        actionRef={actionRef}
+        rowClassName={(_, index) => (index % 2 === 0 ? 'row-differentiator' : '')}
+        actionRef={crudActions.actionRef}
         columns={enhancedColumns}
         request={handleRequest}
         search={{ labelWidth: 'auto' }}
-        pagination={{ pageSize: defaultPageSize }}
+        pagination={{ 
+          pageSize: defaultPageSize,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        loading={crudActions.state.loading}
+        rowSelection={rowSelection}
         toolBarRender={() => [
           <Button
             key="add"
@@ -206,12 +322,29 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
           >
             New
           </Button>,
+          ...(enableBulkOperations && selectedRowKeys.length > 0 ? [
+            <Button
+              key="bulk-delete"
+              danger
+              onClick={handleBulkDelete}
+            >
+              Delete Selected ({selectedRowKeys.length})
+            </Button>
+          ] : []),
           <Dropdown
             key="menu"
             menu={{
               items: [
-                { key: 'export', label: 'Export' },
-                { key: 'refresh', label: 'Refresh', onClick: () => actionRef.current?.reload() },
+                { 
+                  key: 'export', 
+                  label: 'Export',
+                  disabled: true, // TODO: Implement export
+                },
+                { 
+                  key: 'refresh', 
+                  label: 'Refresh', 
+                  onClick: () => crudActions.refresh() 
+                },
               ],
             }}
           >
@@ -222,18 +355,18 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         ]}
         options={{
           setting: { listsHeight: 400 },
-          reload: () => actionRef.current?.reload(),
+          reload: () => crudActions.refresh(),
         }}
         dateFormatter="string"
       />
 
       <Modal
-        forceRender
         title={currentRecord ? 'Edit Item' : 'Create Item'}
         open={modalVisible}
         onOk={handleOk}
-        onCancel={handleCancel}
+        onCancel={() => setModalVisible(false)}
         destroyOnClose
+        width={600}
       >
         <Form form={form} layout="vertical">
           {columns.map((col) => {
@@ -241,6 +374,23 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             const name = col.dataIndex as string;
             const label = col.title as string;
             const fieldDisabled = !(col.fieldEditable ?? true);
+            const rules = col.formConfig?.rules || (col.formConfig?.required ? [
+              { required: true, message: `${label} is required` }
+            ] : []);
+
+            // Custom component override
+            if (col.formConfig?.component) {
+              return (
+                <Form.Item
+                  key={name}
+                  name={name}
+                  label={label}
+                  rules={rules}
+                >
+                  {col.formConfig.component}
+                </Form.Item>
+              );
+            }
 
             switch (col.fieldType) {
               case 'string':
@@ -249,7 +399,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     key={name}
                     name={name}
                     label={label}
-                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                    rules={rules}
                   >
                     <Input disabled={fieldDisabled} />
                   </Form.Item>
@@ -260,7 +410,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     key={name}
                     name={name}
                     label={label}
-                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                    rules={rules}
                   >
                     <InputNumber style={{ width: '100%' }} disabled={fieldDisabled} />
                   </Form.Item>
@@ -271,7 +421,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     key={name}
                     name={name}
                     label={label}
-                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                    rules={rules}
                   >
                     <DatePicker style={{ width: '100%' }} showTime disabled={fieldDisabled} />
                   </Form.Item>
@@ -284,7 +434,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     label={label}
                     valuePropName="checked"
                   >
-                    <Switch disabled={fieldDisabled}  />
+                    <Switch disabled={fieldDisabled} />
                   </Form.Item>
                 );
               case 'enum':
@@ -293,14 +443,16 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                     key={name}
                     name={name}
                     label={label}
-                    rules={[{ required: col.formConfig?.required, message: `${label} is required` }]}
+                    rules={rules}
                   >
                     <Select 
-                      disabled={fieldDisabled} 
+                      disabled={fieldDisabled}
+                      placeholder={`Select ${label.toLowerCase()}`}
                       options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
                         label: option.text,
                         value,
-                    }))} />
+                      }))} 
+                    />
                   </Form.Item>
                 );
               default:
