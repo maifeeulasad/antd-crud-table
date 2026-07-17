@@ -2,7 +2,7 @@ import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 import { format, parseISO, formatISO } from 'date-fns';
 import dayjs from 'dayjs';
@@ -56,11 +56,6 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
-
-  // Load data on mount
-  useEffect(() => {
-    crudActions.refresh();
-  }, []);
 
   // Enhanced columns with better type handling
   const enhancedColumns: ProColumns<T>[] = columns.map((col) => {
@@ -311,7 +306,6 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
           showSizeChanger: true,
           showQuickJumper: true,
         }}
-        loading={crudActions.state.loading}
         rowSelection={rowSelection}
         toolBarRender={() => [
           <Button
@@ -340,10 +334,10 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
                   label: 'Export',
                   disabled: true, // TODO: Implement export
                 },
-                { 
-                  key: 'refresh', 
-                  label: 'Refresh', 
-                  onClick: () => crudActions.refresh() 
+                {
+                  key: 'refresh',
+                  label: 'Refresh',
+                  onClick: () => crudActions.actionRef.current?.reload()
                 },
               ],
             }}
@@ -355,7 +349,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         ]}
         options={{
           setting: { listsHeight: 400 },
-          reload: () => crudActions.refresh(),
+          reload: true,
         }}
         dateFormatter="string"
       />
