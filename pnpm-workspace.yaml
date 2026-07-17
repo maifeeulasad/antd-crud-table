@@ -1,0 +1,11 @@
+# Modern pnpm reads settings from here, not the "pnpm" field in package.json.
+# obug@2.1.4 (a vitest transitive dep) is younger than the CI runner's
+# supply-chain release-age cutoff; drop this pin once it ages out.
+overrides:
+  obug: 2.1.3
+
+# Latest pnpm fails the install when a dependency's build script is
+# ignored instead of just warning; @swc/core needs its postinstall to
+# fetch the platform binary for @vitejs/plugin-react-swc.
+onlyBuiltDependencies:
+  - '@swc/core'

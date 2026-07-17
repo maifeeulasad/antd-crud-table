@@ -17,6 +17,7 @@
   ],
   "license": "MIT",
   "author": "Maifee Ul Asad<maifeeulasad@gmail.com>",
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "vite",
     "build:static": "tsc -b && vite build",
