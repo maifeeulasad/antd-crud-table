@@ -9,7 +9,11 @@ export type FieldType =
   | 'date'
   | 'boolean'
   | 'enum'
-  | 'custom';
+  | 'custom'
+  | 'textarea'
+  | 'email'
+  | 'url'
+  | 'password';
 
 /** The slice of a CrudColumn a field-type definition may look at. */
 export interface FieldColumn {
@@ -125,6 +129,48 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     // Custom columns bring their own control via formConfig.component
     // (handled before the registry lookup); otherwise they have no form field.
     formControl: () => null,
+  },
+
+  textarea: {
+    column: () => ({ valueType: 'textarea', ellipsis: true }),
+    formControl: (_col, disabled) => (
+      <Input.TextArea rows={3} disabled={disabled} />
+    ),
+  },
+
+  email: {
+    column: (col) => ({
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        return value ? <a href={`mailto:${value}`}>{value}</a> : '-';
+      },
+    }),
+    formControl: (_col, disabled) => <Input type="email" disabled={disabled} />,
+    rules: () => [{ type: 'email', message: 'Please enter a valid email' }],
+  },
+
+  url: {
+    column: (col) => ({
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        return value ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            {value}
+          </a>
+        ) : '-';
+      },
+    }),
+    formControl: (_col, disabled) => <Input disabled={disabled} />,
+    rules: () => [{ type: 'url', message: 'Please enter a valid URL' }],
+  },
+
+  password: {
+    // Never show the value in the table, and keep it out of search by default
+    column: (col) => ({
+      search: false,
+      render: (_, record) => (cellValue(col, record) ? '••••••••' : '-'),
+    }),
+    formControl: (_col, disabled) => <Input.Password disabled={disabled} />,
   },
 };
 
