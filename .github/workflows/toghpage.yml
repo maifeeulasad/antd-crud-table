@@ -20,7 +20,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - name: 'Installing build deps'    
-      run: npm i -g pnpm
+      run: npm i -g pnpm@10.25.0
     - name: 'Installing deps'    
       run: pnpm i
     - name: 'Build'
