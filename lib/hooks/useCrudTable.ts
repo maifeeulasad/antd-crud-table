@@ -120,14 +120,20 @@ const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation
 
   return {
     getList: async (params: CrudParams) => {
-      const url = new URL(`${baseUrl}${defaultEndpoints.list}`, window.location.origin);
+      // Only build the endpoint path + query here; fetchWithConfig is the
+      // single place that applies baseUrl, otherwise relative baseUrls
+      // (e.g. '/api') end up in the request twice.
+      const search = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
+          search.append(key, String(value));
         }
       });
-      
-      const response = await fetchWithConfig(url.pathname + url.search);
+
+      const queryString = search.toString();
+      const response = await fetchWithConfig(
+        queryString ? `${defaultEndpoints.list}?${queryString}` : defaultEndpoints.list
+      );
       return transform?.response ? transform.response(response) : response;
     },
     
