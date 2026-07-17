@@ -1,4 +1,4 @@
-import { Input, InputNumber, Select, Switch, DatePicker, Tag } from 'antd';
+import { Input, InputNumber, Select, Switch, DatePicker, Tag, Rate, Progress } from 'antd';
 import type { ProColumns } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 
@@ -13,7 +13,11 @@ export type FieldType =
   | 'textarea'
   | 'email'
   | 'url'
-  | 'password';
+  | 'password'
+  | 'money'
+  | 'percent'
+  | 'rating'
+  | 'progress';
 
 /** The slice of a CrudColumn a field-type definition may look at. */
 export interface FieldColumn {
@@ -171,6 +175,49 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       render: (_, record) => (cellValue(col, record) ? '••••••••' : '-'),
     }),
     formControl: (_col, disabled) => <Input.Password disabled={disabled} />,
+  },
+
+  money: {
+    // ProTable's money valueType formats via the active intl (enUSIntl here)
+    column: () => ({ valueType: 'money' }),
+    formControl: (_col, disabled) => (
+      <InputNumber style={{ width: '100%' }} precision={2} min={0} disabled={disabled} />
+    ),
+  },
+
+  percent: {
+    column: () => ({ valueType: 'percent' }),
+    formControl: (_col, disabled) => (
+      <InputNumber
+        style={{ width: '100%' }}
+        min={0}
+        max={100}
+        addonAfter="%"
+        disabled={disabled}
+      />
+    ),
+  },
+
+  rating: {
+    column: (col) => ({
+      search: false,
+      render: (_, record) => (
+        <Rate disabled allowHalf value={Number(cellValue(col, record)) || 0} />
+      ),
+    }),
+    formControl: (_col, disabled) => <Rate allowHalf disabled={disabled} />,
+  },
+
+  progress: {
+    column: (col) => ({
+      search: false,
+      render: (_, record) => (
+        <Progress percent={Number(cellValue(col, record)) || 0} size="small" />
+      ),
+    }),
+    formControl: (_col, disabled) => (
+      <InputNumber style={{ width: '100%' }} min={0} max={100} disabled={disabled} />
+    ),
   },
 };
 
