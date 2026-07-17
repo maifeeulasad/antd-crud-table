@@ -93,8 +93,8 @@ export type CrudTableActions<T> = {
 };
 
 // Default API operations
-const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation<T> => {
-  const { baseUrl = '', endpoints = {}, headers = {}, transform } = config.api;
+const createApiOperations = <T>(api: UseCrudTableConfigApi<T>['api']): CrudOperation<T> => {
+  const { baseUrl = '', endpoints = {}, headers = {}, transform } = api;
   
   const defaultEndpoints = {
     list: '/list',
@@ -217,38 +217,40 @@ export const useCrudTable = <T extends Record<string, any>>(
   // Create operations based on config. Memoized on the strategy inputs:
   // static operations keep their working copy in a closure, so rebuilding
   // them on every render would silently reset the dataset.
+  const customOperations = 'operations' in config ? config.operations : undefined;
+  const staticData = 'staticData' in config ? config.staticData : undefined;
+  const apiConfig = 'api' in config ? config.api : undefined;
+
   const operations = useMemo(() => {
-    if ('operations' in config) {
+    if (customOperations) {
       // Custom operations provided
-      return config.operations as CrudOperation<T>;
-    } else if ('staticData' in config) {
+      return customOperations as CrudOperation<T>;
+    } else if (staticData) {
       // Static data approach
-      return createStaticOperations(config.staticData, rowKey);
-    } else if ('api' in config) {
+      return createStaticOperations(staticData, rowKey);
+    } else if (apiConfig) {
       // API-based approach
-      return createApiOperations(config);
+      return createApiOperations<T>(apiConfig);
     } else {
       throw new Error('useCrudTable: Must provide either staticData, api config, or custom operations');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    'operations' in config ? config.operations : undefined,
-    'staticData' in config ? config.staticData : undefined,
-    'api' in config ? config.api : undefined,
-    rowKey,
-  ]);
+  }, [customOperations, staticData, apiConfig, rowKey]);
+
+  // Destructured so the deps below are plain values; a property named
+  // `state.current` would trip the ref heuristic in react-hooks lint
+  const { current: currentPage, pageSize } = state;
 
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
-    
+
     try {
       const params: CrudParams = {
-        current: state.current,
-        pageSize: state.pageSize,
+        current: currentPage,
+        pageSize,
       };
-      
+
       const response = await operations.getList!(params);
-      
+
       setState(prev => ({
         ...prev,
         data: response.data,
@@ -261,7 +263,7 @@ export const useCrudTable = <T extends Record<string, any>>(
       config.onError?.('fetch', error);
       message.error(errorMessage);
     }
-  }, [state.current, state.pageSize, operations, config]);
+  }, [currentPage, pageSize, operations, config]);
 
   const create = useCallback(async (data: Partial<T>): Promise<T | null> => {
     if (!operations.create) {
