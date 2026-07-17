@@ -1,4 +1,4 @@
-import { Input, InputNumber, Select, Switch, DatePicker, Tag, Rate, Progress } from 'antd';
+import { Input, InputNumber, Select, Switch, DatePicker, TimePicker, Tag, Rate, Progress } from 'antd';
 import type { ProColumns } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 
@@ -17,7 +17,9 @@ export type FieldType =
   | 'money'
   | 'percent'
   | 'rating'
-  | 'progress';
+  | 'progress'
+  | 'time'
+  | 'dateRange';
 
 /** The slice of a CrudColumn a field-type definition may look at. */
 export interface FieldColumn {
@@ -54,6 +56,8 @@ const cellValue = (col: FieldColumn, record: Record<string, any>) =>
   record[col.dataIndex as string];
 
 const DATE_TIME_DISPLAY = 'YYYY-MM-DD HH:mm';
+const DATE_DISPLAY = 'YYYY-MM-DD';
+const TIME_VALUE = 'HH:mm:ss';
 
 export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
   string: {
@@ -218,6 +222,40 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <InputNumber style={{ width: '100%' }} min={0} max={100} disabled={disabled} />
     ),
+  },
+
+  // Stored as an 'HH:mm:ss' string
+  time: {
+    column: () => ({ valueType: 'time' }),
+    formControl: (_col, disabled) => (
+      <TimePicker style={{ width: '100%' }} disabled={disabled} />
+    ),
+    toFormValue: (value) => (value ? dayjs(value, TIME_VALUE) : value),
+    fromFormValue: (value) =>
+      dayjs.isDayjs(value) ? value.format(TIME_VALUE) : value,
+  },
+
+  // Stored as a [startISO, endISO] tuple
+  dateRange: {
+    column: (col) => ({
+      valueType: 'dateRange',
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        if (!Array.isArray(value) || value.length !== 2) return '-';
+        const [start, end] = value.map((v) => dayjs(v));
+        if (!start.isValid() || !end.isValid()) return String(value);
+        return `${start.format(DATE_DISPLAY)} ~ ${end.format(DATE_DISPLAY)}`;
+      },
+    }),
+    formControl: (_col, disabled) => (
+      <DatePicker.RangePicker style={{ width: '100%' }} disabled={disabled} />
+    ),
+    toFormValue: (value) =>
+      Array.isArray(value) ? value.map((v) => (v ? dayjs(v) : v)) : value,
+    fromFormValue: (value) =>
+      Array.isArray(value)
+        ? value.map((v) => (dayjs.isDayjs(v) ? v.toISOString() : v))
+        : value,
   },
 };
 
