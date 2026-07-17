@@ -1,4 +1,4 @@
-import { Input, InputNumber, Select, Switch, DatePicker, TimePicker, Tag, Rate, Progress } from 'antd';
+import { Input, InputNumber, Select, Switch, DatePicker, TimePicker, Tag, Rate, Progress, Image, ColorPicker, Typography } from 'antd';
 import type { ProColumns } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 
@@ -19,7 +19,11 @@ export type FieldType =
   | 'rating'
   | 'progress'
   | 'time'
-  | 'dateRange';
+  | 'dateRange'
+  | 'tags'
+  | 'image'
+  | 'color'
+  | 'json';
 
 /** The slice of a CrudColumn a field-type definition may look at. */
 export interface FieldColumn {
@@ -256,6 +260,104 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       Array.isArray(value)
         ? value.map((v) => (dayjs.isDayjs(v) ? v.toISOString() : v))
         : value,
+  },
+
+  // Stored as string[]
+  tags: {
+    column: (col) => ({
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        if (!Array.isArray(value) || value.length === 0) return '-';
+        return (
+          <>
+            {value.map((tag: string) => (
+              <Tag key={tag}>{tag}</Tag>
+            ))}
+          </>
+        );
+      },
+    }),
+    formControl: (_col, disabled) => (
+      <Select mode="tags" open={false} suffixIcon={null} disabled={disabled} placeholder="Type and press enter" />
+    ),
+  },
+
+  // Stored as an image URL
+  image: {
+    column: (col) => ({
+      search: false,
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        return value ? <Image src={value} width={48} height={48} style={{ objectFit: 'cover' }} /> : '-';
+      },
+    }),
+    formControl: (_col, disabled) => (
+      <Input placeholder="https://..." disabled={disabled} />
+    ),
+    rules: () => [{ type: 'url', message: 'Please enter a valid image URL' }],
+  },
+
+  // Stored as a hex string
+  color: {
+    column: (col) => ({
+      search: false,
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        if (!value) return '-';
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 14,
+                height: 14,
+                borderRadius: 3,
+                border: '1px solid rgba(0,0,0,0.15)',
+                backgroundColor: value,
+              }}
+            />
+            {value}
+          </span>
+        );
+      },
+    }),
+    formControl: (_col, disabled) => <ColorPicker showText disabled={disabled} />,
+    fromFormValue: (value) =>
+      value && typeof value === 'object' && 'toHexString' in value
+        ? (value as { toHexString: () => string }).toHexString()
+        : value,
+  },
+
+  // Stored as a plain object/array
+  json: {
+    column: (col) => ({
+      search: false,
+      ellipsis: true,
+      render: (_, record) => {
+        const value = cellValue(col, record);
+        if (value === undefined || value === null) return '-';
+        return <Typography.Text code>{JSON.stringify(value)}</Typography.Text>;
+      },
+    }),
+    formControl: (_col, disabled) => (
+      <Input.TextArea rows={4} style={{ fontFamily: 'monospace' }} disabled={disabled} />
+    ),
+    toFormValue: (value) =>
+      typeof value === 'string' ? value : JSON.stringify(value, null, 2),
+    fromFormValue: (value) => (typeof value === 'string' && value.trim() !== '' ? JSON.parse(value) : value),
+    rules: () => [
+      {
+        validator: async (_rule: unknown, value: unknown) => {
+          if (value === undefined || value === null || value === '') return;
+          if (typeof value !== 'string') return;
+          try {
+            JSON.parse(value);
+          } catch {
+            throw new Error('Please enter valid JSON');
+          }
+        },
+      },
+    ],
   },
 };
 
