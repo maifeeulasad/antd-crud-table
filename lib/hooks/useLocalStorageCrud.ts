@@ -260,6 +260,7 @@ export const useLocalStorageCrud = <T extends Record<string, any>>(
     create,
     update,
     delete: deleteItem,
+    operations,
     setPageSize,
     setCurrentPage,
     state,

@@ -166,7 +166,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         current: params.current,
         pageSize: params.pageSize,
         sortBy: Object.keys(sort)[0],
-        sortOrder: Object.values(sort)[0],
+        sortOrder: Object.values(sort)[0] ?? undefined,
         ...filter,
         ...params, // Include search parameters
       };
