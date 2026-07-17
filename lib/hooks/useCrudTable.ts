@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import { message } from 'antd';
 import type { ActionType } from '@ant-design/pro-components';
 
+import { applyQuery } from '../utils/query';
+
 export type CrudOperation<T> = {
   getList: (params: CrudParams) => Promise<CrudResponse<T>>;
   create: (data: Partial<T>) => Promise<T>;
@@ -162,7 +164,7 @@ const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation
 };
 
 // Static data operations
-const createStaticOperations = <T>(staticData: T[], keyField: keyof T): CrudOperation<T> => {
+const createStaticOperations = <T extends Record<string, any>>(staticData: T[], keyField: keyof T): CrudOperation<T> => {
   const data = [...staticData];
   // Math.max() over an empty spread is -Infinity, so guard the empty case
   let nextId = data.length > 0
@@ -170,40 +172,7 @@ const createStaticOperations = <T>(staticData: T[], keyField: keyof T): CrudOper
     : 1;
 
   return {
-    getList: async (params: CrudParams) => {
-      const { current = 1, pageSize = 10, sortBy, sortOrder, ...filters } = params;
-      
-      let filteredData = [...data];
-      
-      // Apply filters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          filteredData = filteredData.filter(item => 
-            String(item[key as keyof T]).toLowerCase().includes(String(value).toLowerCase())
-          );
-        }
-      });
-      
-      // Apply sorting
-      if (sortBy && sortOrder) {
-        filteredData.sort((a, b) => {
-          const aVal = a[sortBy as keyof T];
-          const bVal = b[sortBy as keyof T];
-          const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-          return sortOrder === 'ascend' ? comparison : -comparison;
-        });
-      }
-      
-      // Apply pagination
-      const start = (current - 1) * pageSize;
-      const paginatedData = filteredData.slice(start, start + pageSize);
-      
-      return {
-        data: paginatedData,
-        total: filteredData.length,
-        success: true,
-      };
-    },
+    getList: async (params: CrudParams) => applyQuery(data, params),
     
     create: async (newData: Partial<T>) => {
       const item = { 
