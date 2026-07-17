@@ -94,5 +94,10 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "obug": "2.1.3"
+    }
+  }
 }
