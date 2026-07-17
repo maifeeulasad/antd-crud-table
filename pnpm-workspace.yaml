@@ -1,0 +1,5 @@
+# Modern pnpm reads settings from here, not the "pnpm" field in package.json.
+# obug@2.1.4 (a vitest transitive dep) is younger than the CI runner's
+# supply-chain release-age cutoff; drop this pin once it ages out.
+overrides:
+  obug: 2.1.3
