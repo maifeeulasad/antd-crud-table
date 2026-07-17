@@ -10,7 +10,6 @@ const peerDeps = [
   'antd',
   '@ant-design/icons',
   '@ant-design/pro-components',
-  'date-fns',
   'dayjs',
 ];
 

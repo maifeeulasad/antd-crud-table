@@ -29,7 +29,6 @@
     "@ant-design/icons": "^6.0.0",
     "@ant-design/pro-components": "^2.8.10",
     "antd": "^6.3.6",
-    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
