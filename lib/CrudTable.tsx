@@ -139,7 +139,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         success: true,
         total: crudActions.state.total
       };
-    } catch (error) {
+    } catch {
       message.error('Failed to fetch data');
       return { data: [], success: false, total: 0 };
     }
