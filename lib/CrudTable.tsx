@@ -2,12 +2,13 @@ import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, message, Modal, Form } from 'antd';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 
 import './CrudTable.css';
 import { useCrudTable, type UseCrudTableConfig, type CrudTableActions } from './hooks/useCrudTable';
 import { getFieldDefinition, type FieldType } from './fields/registry';
+import { exportData, type ExportFormat } from './utils/exportData';
 
 type DataType = Record<string, any>;
 
@@ -42,7 +43,7 @@ interface CrudTableConfig<T extends DataType> {
 }
 
 const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
-  const { columns, rowKey, title, defaultPageSize = 10, hookConfig, enableBulkOperations = false, customActions } = config;
+  const { columns, rowKey, title, defaultPageSize = 10, hookConfig, enableBulkOperations = false, enableExport = true, customActions } = config;
   
     // Use the new hook
   const crudActions = useCrudTable(rowKey, {
@@ -54,6 +55,8 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
+  // What the table currently shows (the latest request response), for export
+  const visibleDataRef = useRef<T[]>([]);
 
   // Enhanced columns: base props + whatever the field-type registry adds
   const enhancedColumns: ProColumns<T>[] = columns.map((col) => {
@@ -121,18 +124,20 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       const { operations } = crudActions;
       if (operations.getList) {
         const response = await operations.getList(query);
-        return { 
-          data: response.data, 
-          success: true, 
-          total: response.total 
+        visibleDataRef.current = response.data ?? [];
+        return {
+          data: response.data,
+          success: true,
+          total: response.total
         };
       }
-      
+
       // Fallback to current state
-      return { 
-        data: crudActions.state.data, 
-        success: true, 
-        total: crudActions.state.total 
+      visibleDataRef.current = crudActions.state.data;
+      return {
+        data: crudActions.state.data,
+        success: true,
+        total: crudActions.state.total
       };
     } catch (error) {
       message.error('Failed to fetch data');
@@ -234,6 +239,27 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
     });
   };
 
+  const handleExport = (format: ExportFormat) => {
+    const data = visibleDataRef.current;
+    if (data.length === 0) {
+      message.warning('Nothing to export');
+      return;
+    }
+
+    // Password values never leave the table masked, so skip them entirely
+    const exportColumns = columns
+      .filter((col) => col.dataIndex && col.fieldType !== 'password')
+      .map((col) => ({
+        title: typeof col.title === 'string' ? col.title : String(col.dataIndex),
+        dataIndex: String(col.dataIndex),
+        fieldType: col.fieldType,
+        enumOptions: col.enumOptions,
+      }));
+
+    const filename = title ? title.toLowerCase().replace(/\s+/g, '-') : 'export';
+    exportData({ data, columns: exportColumns, filename, format });
+  };
+
   const rowSelection = enableBulkOperations ? {
     selectedRowKeys,
     onChange: setSelectedRowKeys,
@@ -277,11 +303,12 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             key="menu"
             menu={{
               items: [
-                { 
-                  key: 'export', 
-                  label: 'Export',
-                  disabled: true, // TODO: Implement export
-                },
+                ...(enableExport ? [
+                  { key: 'export-csv', label: 'Export CSV', onClick: () => handleExport('csv') },
+                  { key: 'export-json', label: 'Export JSON', onClick: () => handleExport('json') },
+                  { key: 'export-excel', label: 'Export Excel', onClick: () => handleExport('xlsx') },
+                  { type: 'divider' as const },
+                ] : []),
                 {
                   key: 'refresh',
                   label: 'Refresh',

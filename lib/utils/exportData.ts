@@ -97,7 +97,11 @@ export const exportToJSON = <T>(options: ExportOptions<T>): void => {
 };
 
 /**
- * Export data to XLSX format (using simple XML format)
+ * Export data as an Excel-compatible spreadsheet.
+ *
+ * Emits Excel 2003 SpreadsheetML (an XML dialect Excel and LibreOffice
+ * open natively from a .xls file) rather than a real OOXML .xlsx, which
+ * would require a dedicated dependency such as exceljs.
  */
 export const exportToXLSX = <T extends Record<string, any>>(options: ExportOptions<T>): void => {
   const { data, columns, filename = 'export' } = options;
@@ -110,8 +114,8 @@ export const exportToXLSX = <T extends Record<string, any>>(options: ExportOptio
   // Prepare headers
   const headers = visibleColumns.map(col => String(col.title || col.dataIndex));
 
-  // Prepare data rows
-  const rows = data.map(record => {
+  // Prepare data rows, keeping numbers as numbers so Excel treats them as such
+  const rows: (string | number)[][] = data.map(record => {
     return visibleColumns.map(col => {
       const value = record[col.dataIndex as keyof T];
       if (value === null || value === undefined) return '';
@@ -123,44 +127,47 @@ export const exportToXLSX = <T extends Record<string, any>>(options: ExportOptio
         const option = col.enumOptions[value as string];
         return option?.text || String(value);
       }
+      if (typeof value === 'number') {
+        return value;
+      }
 
       return String(value);
     });
   });
 
-  // Create XLSX content (simple XML format)
-  const createXLSX = () => {
-    const escapeXml = (str: string): string => {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    };
-
-    const headersXml = headers.map(h => `<c t="inlineStr"><is><t>${escapeXml(h)}</t></is></c>`).join('');
-    const rowsXml = rows.map(row =>
-      `<row>${row.map(cell => `<c t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`).join('')}</row>`
-    ).join('');
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="stylesheet.xsl"?>
-<workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet">
-  <sheets>
-    <sheet name="Export">
-      <table>
-        <row>${headersXml}</row>
-        ${rowsXml}
-      </table>
-    </sheet>
-  </sheets>
-</workbook>`;
+  const escapeXml = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   };
 
-  // Create a simple Excel XML file
-  const xlsxContent = createXLSX();
-  downloadFile(xlsxContent, `${filename}.xls`, 'application/vnd.ms-excel');
+  const cellXml = (cell: string | number): string => {
+    const type = typeof cell === 'number' ? 'Number' : 'String';
+    const content = typeof cell === 'number' ? String(cell) : escapeXml(cell);
+    return `<Cell><Data ss:Type="${type}">${content}</Data></Cell>`;
+  };
+
+  const headerXml = `<Row>${headers.map(h => cellXml(h)).join('')}</Row>`;
+  const rowsXml = rows
+    .map(row => `<Row>${row.map(cell => cellXml(cell)).join('')}</Row>`)
+    .join('\n');
+
+  const xlsContent = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Export">
+  <Table>
+${headerXml}
+${rowsXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+  downloadFile(xlsContent, `${filename}.xls`, 'application/vnd.ms-excel');
 };
 
 /**
