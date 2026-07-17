@@ -538,12 +538,39 @@ const RealtimeTable = () => {
 |------|------|-------------|
 | `dataIndex` | `keyof T` | Field key in your data |
 | `title` | `string` | Column header text |
-| `fieldType` | `FieldType` | `"string" \| "number" \| "boolean" \| "date" \| "enum" \| "custom"` |
+| `fieldType` | `FieldType` | See the field type table below (default: `"string"`) |
 | `fieldEditable?` | `boolean` | Whether field can be edited (default: true) |
 | `searchable?` | `boolean` | Whether field appears in search (default: true) |
 | `enumOptions?` | `Record<string, {text: string, color?: string}>` | Options for enum fields |
 | `customRender?` | `(value, record) => ReactNode` | Custom display renderer |
 | `formConfig?` | `FormConfig` | Form field configuration |
+
+### Field Types
+
+| `fieldType` | Stored as | Table cell | Form control |
+|-------------|-----------|------------|--------------|
+| `string` (default) | `string` | text | `Input` |
+| `textarea` | `string` | ellipsised text | `Input.TextArea` |
+| `email` | `string` | `mailto:` link (validated) | `Input` |
+| `url` | `string` | link (validated) | `Input` |
+| `password` | `string` | masked, excluded from search | `Input.Password` |
+| `number` | `number` | localized number | `InputNumber` |
+| `money` | `number` | currency (via ProTable intl) | `InputNumber` |
+| `percent` | `number` | percentage | `InputNumber` 0–100 |
+| `rating` | `number` | stars | `Rate` |
+| `progress` | `number` | progress bar | `InputNumber` 0–100 |
+| `date` | ISO string | `YYYY-MM-DD HH:mm` | `DatePicker` |
+| `time` | `HH:mm:ss` string | time | `TimePicker` |
+| `dateRange` | `[startISO, endISO]` | `start ~ end` | `RangePicker` |
+| `boolean` | `boolean` | Yes/No tag | `Switch` |
+| `enum` | `string` | colored tag | `Select` |
+| `tags` | `string[]` | tag list | `Select mode="tags"` |
+| `image` | URL string | 48px preview | `Input` (URL, validated) |
+| `color` | hex string | swatch + code | `ColorPicker` |
+| `json` | object | inline code | validated `Input.TextArea` |
+| `custom` | anything | `customRender` | `formConfig.component` |
+
+Every field type is one entry in the exported `fieldRegistry` (`lib/fields/registry.tsx`), declaring its cell render, form control, implied validation rules and record↔form value conversion in one place.
 
 ### FormConfig
 

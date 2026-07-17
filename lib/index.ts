@@ -9,6 +9,10 @@ export { useLocalStorageCrud } from './hooks/useLocalStorageCrud';
 // Utils
 export { exportData, exportToCSV, exportToJSON, exportToXLSX, exportAllData } from './utils/exportData';
 
+// Field-type registry
+export { fieldRegistry, getFieldDefinition } from './fields/registry';
+export type { FieldType, FieldTypeDefinition, FieldColumn } from './fields/registry';
+
 // Types
 export type { CrudTableConfig, CrudColumn, DataType } from './CrudTable';
 export type {
