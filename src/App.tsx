@@ -6,6 +6,7 @@ import LocalStorageExample from './example/LocalStorageExample';
 import ApiBasedExample from './example/ApiBasedExample';
 import StaticDataExample from './example/StaticDataExample';
 import CustomOperationsExample from './example/CustomOperationsExample';
+import FieldTypesShowcase from './example/FieldTypesShowcase';
 
 const App = () => (
   <ConfigProvider locale={enUS}>
@@ -21,12 +22,13 @@ const App = () => (
       <StaticDataExample />
       <ApiBasedExample />
       <CustomOperationsExample />
+      <FieldTypesShowcase />
 
       <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
         <h3>Features</h3>
         <ul>
           <li><strong>Multiple Data Sources:</strong> Static data, REST API, localStorage, IndexedDB, GraphQL</li>
-          <li><strong>Field Types:</strong> String, Number, Date, Boolean, Enum, Custom</li>
+          <li><strong>Field Types:</strong> String, Textarea, Email, URL, Password, Number, Money, Percent, Rating, Progress, Date, Time, DateRange, Boolean, Enum, Tags, Image, Color, JSON, Custom</li>
           <li><strong>Operations:</strong> Create, Read, Update, Delete with validation</li>
           <li><strong>Export:</strong> CSV, JSON, XLSX support</li>
           <li><strong>Bulk Operations:</strong> Multi-select and batch delete</li>
