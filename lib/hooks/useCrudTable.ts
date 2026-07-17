@@ -77,11 +77,14 @@ export type CrudTableActions<T> = {
   create: (data: Partial<T>) => Promise<T | null>;
   update: (id: any, data: Partial<T>) => Promise<T | null>;
   delete: (id: any) => Promise<boolean>;
-  
+
+  // Raw data-source operations, for direct wiring (e.g. ProTable's request)
+  operations: Partial<CrudOperation<T>>;
+
   // Table operations
   setPageSize: (size: number) => void;
   setCurrentPage: (page: number) => void;
-  
+
   // State
   state: CrudState<T>;
   actionRef: React.RefObject<ActionType | null>;
@@ -387,6 +390,7 @@ export const useCrudTable = <T extends Record<string, any>>(
     create,
     update,
     delete: deleteItem,
+    operations,
     setPageSize,
     setCurrentPage,
     state,
