@@ -23,6 +23,8 @@
     "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "peerDependencies": {
@@ -35,6 +37,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.15.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
@@ -43,12 +47,14 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "jsdom": "^29.1.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
     "vite": "^8.0.8",
-    "vite-plugin-dts": "^4.5.3"
+    "vite-plugin-dts": "^4.5.3",
+    "vitest": "^4.1.10"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
