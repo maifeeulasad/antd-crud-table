@@ -89,7 +89,7 @@ export type CrudTableActions<T> = {
 
   // State
   state: CrudState<T>;
-  actionRef: React.RefObject<ActionType | null>;
+  actionRef: React.MutableRefObject<ActionType | undefined>;
 };
 
 // Default API operations
@@ -204,7 +204,7 @@ export const useCrudTable = <T extends Record<string, any>>(
   rowKey: keyof T,
   config: UseCrudTableConfig<T>
 ): CrudTableActions<T> => {
-  const actionRef = useRef<ActionType>(null);
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [state, setState] = useState<CrudState<T>>({
     loading: false,
     error: null,

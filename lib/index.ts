@@ -1,6 +1,9 @@
 // Main components
 export { default as CrudTable } from './CrudTable';
 export { default as CrudTableLazy } from './CrudTableLazy';
+// Default export kept so `import CrudTable from 'antd-crud-table'`
+// (the pre-barrel entry behaviour) keeps working
+export { default } from './CrudTable';
 
 // Hooks
 export { useCrudTable } from './hooks/useCrudTable';

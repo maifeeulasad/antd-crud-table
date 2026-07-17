@@ -29,7 +29,6 @@
     "@ant-design/icons": "^6.0.0",
     "@ant-design/pro-components": "^2.8.10",
     "antd": "^6.3.6",
-    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
@@ -37,8 +36,8 @@
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@types/node": "^22.15.2",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -51,11 +50,16 @@
     "vite": "^8.0.8",
     "vite-plugin-dts": "^4.5.3"
   },
-  "main": "./dist/CrudTable.cjs",
-  "module": "./dist/CrudTable.js",
-  "types": "./dist/CrudTable.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./CrudTable": {
       "types": "./dist/CrudTable.d.ts",
       "import": "./dist/CrudTable.js",
       "require": "./dist/CrudTable.cjs"
@@ -71,11 +75,16 @@
       "require": "./dist/useCrudTable.cjs"
     },
     "./hooks/useLocalStorageCrud": {
-      "types": "./dist/hooks/useLocalStorageCrud.d.ts"
+      "types": "./dist/hooks/useLocalStorageCrud.d.ts",
+      "import": "./dist/useLocalStorageCrud.js",
+      "require": "./dist/useLocalStorageCrud.cjs"
     },
     "./utils/exportData": {
-      "types": "./dist/utils/exportData.d.ts"
-    }
+      "types": "./dist/utils/exportData.d.ts",
+      "import": "./dist/exportData.js",
+      "require": "./dist/exportData.cjs"
+    },
+    "./styles.css": "./dist/antd-crud-table.css"
   },
   "files": [
     "dist"

@@ -629,7 +629,7 @@ Customize row striping using `.row-differentiator` in `CrudTable.css`:
 
 ## 📌 Notes
 
-- Date fields are handled via `dayjs` in the form and `date-fns` for display.
+- Date fields are handled via `dayjs` (already required by antd) in both the form and display.
 - All requests are async with error handling via `antd`'s `message` API.
 - Add your own export logic or additional toolbar buttons as needed.
 
