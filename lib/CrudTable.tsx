@@ -177,8 +177,8 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       };
       
       // The hook handles the actual data fetching
-      const operations = (crudActions as any).operations;
-      if (operations?.getList) {
+      const { operations } = crudActions;
+      if (operations.getList) {
         const response = await operations.getList(query);
         return { 
           data: response.data, 
