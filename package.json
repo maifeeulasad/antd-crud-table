@@ -51,11 +51,16 @@
     "vite": "^8.0.8",
     "vite-plugin-dts": "^4.5.3"
   },
-  "main": "./dist/CrudTable.cjs",
-  "module": "./dist/CrudTable.js",
-  "types": "./dist/CrudTable.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./CrudTable": {
       "types": "./dist/CrudTable.d.ts",
       "import": "./dist/CrudTable.js",
       "require": "./dist/CrudTable.cjs"
@@ -71,11 +76,16 @@
       "require": "./dist/useCrudTable.cjs"
     },
     "./hooks/useLocalStorageCrud": {
-      "types": "./dist/hooks/useLocalStorageCrud.d.ts"
+      "types": "./dist/hooks/useLocalStorageCrud.d.ts",
+      "import": "./dist/useLocalStorageCrud.js",
+      "require": "./dist/useLocalStorageCrud.cjs"
     },
     "./utils/exportData": {
-      "types": "./dist/utils/exportData.d.ts"
-    }
+      "types": "./dist/utils/exportData.d.ts",
+      "import": "./dist/exportData.js",
+      "require": "./dist/exportData.cjs"
+    },
+    "./styles.css": "./dist/antd-crud-table.css"
   },
   "files": [
     "dist"
