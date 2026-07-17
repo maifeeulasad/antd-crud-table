@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { message } from 'antd';
 import type { ActionType } from '@ant-design/pro-components';
 
@@ -236,8 +236,10 @@ export const useCrudTable = <T extends Record<string, any>>(
     pageSize: config.defaultPageSize || 10,
   });
 
-  // Create operations based on config
-  const operations = (() => {
+  // Create operations based on config. Memoized on the strategy inputs:
+  // static operations keep their working copy in a closure, so rebuilding
+  // them on every render would silently reset the dataset.
+  const operations = useMemo(() => {
     if ('operations' in config) {
       // Custom operations provided
       return config.operations as CrudOperation<T>;
@@ -250,7 +252,13 @@ export const useCrudTable = <T extends Record<string, any>>(
     } else {
       throw new Error('useCrudTable: Must provide either staticData, api config, or custom operations');
     }
-  })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    'operations' in config ? config.operations : undefined,
+    'staticData' in config ? config.staticData : undefined,
+    'api' in config ? config.api : undefined,
+    rowKey,
+  ]);
 
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
