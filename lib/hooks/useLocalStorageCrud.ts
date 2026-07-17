@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { message } from 'antd';
 import type { ActionType } from '@ant-design/pro-components';
 import type { CrudParams, CrudOperation, CrudState, CrudTableActions } from './useCrudTable';
@@ -128,7 +128,10 @@ export const useLocalStorageCrud = <T extends Record<string, any>>(
     pageSize: config?.defaultPageSize || 10,
   });
 
-  const operations = createLocalStorageOperations<T>(storageKey, rowKey, initialData);
+  const operations = useMemo(
+    () => createLocalStorageOperations<T>(storageKey, rowKey, initialData),
+    [storageKey, rowKey, initialData]
+  );
 
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
