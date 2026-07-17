@@ -1,17 +1,15 @@
 import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
-import { Button, Dropdown, Tag, message, Modal, Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd';
+import { Button, Dropdown, message, Modal, Form } from 'antd';
 import { useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
-import { format, parseISO, formatISO } from 'date-fns';
-import dayjs from 'dayjs';
 
 import './CrudTable.css';
 import { useCrudTable, type UseCrudTableConfig, type CrudTableActions } from './hooks/useCrudTable';
+import { getFieldDefinition, type FieldType } from './fields/registry';
 
 type DataType = Record<string, any>;
-type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
 
 interface CrudColumn<T extends DataType> extends ProColumns<T> {
   fieldType?: FieldType;
@@ -57,7 +55,7 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
 
-  // Enhanced columns with better type handling
+  // Enhanced columns: base props + whatever the field-type registry adds
   const enhancedColumns: ProColumns<T>[] = columns.map((col) => {
     const baseColumn: ProColumns<T> = {
       ...col,
@@ -66,63 +64,11 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       search: col.searchable !== false, // Default to searchable
     };
 
-    switch (col.fieldType) {
-      case 'date':
-        return {
-          ...baseColumn,
-          valueType: 'dateTime',
-          render: (_, record) => {
-            const value = record[col.dataIndex as string];
-            if (!value) return '-';
-            try {
-              return (
-                <span>
-                  {format(parseISO(value), 'yyyy-MM-dd HH:mm')}
-                </span>
-              );
-            } catch {
-              return <span>{value}</span>;
-            }
-          },
-        };
-      case 'enum':
-        return {
-          ...baseColumn,
-          valueType: 'select',
-          valueEnum: col.enumOptions,
-          render: (_, record) => {
-            const value = record[col.dataIndex as string];
-            const option = col.enumOptions?.[value];
-            return option ? <Tag color={option.color}>{option.text}</Tag> : value;
-          },
-        };
-      case 'number':
-        return {
-          ...baseColumn,
-          valueType: 'digit',
-          render: (_, record) => {
-            const value = record[col.dataIndex as string];
-            return typeof value === 'number' ? value.toLocaleString() : value;
-          },
-        };
-      case 'boolean':
-        return {
-          ...baseColumn,
-          valueType: 'switch',
-          render: (_, record) => (
-            <Tag color={record[col.dataIndex as string] ? 'green' : 'red'}>
-              {record[col.dataIndex as string] ? 'Yes' : 'No'}
-            </Tag>
-          ),
-        };
-      case 'custom':
-        return {
-          ...baseColumn,
-          render: (_, record) => col.customRender?.(record[col.dataIndex as string], record),
-        };
-      default:
-        return baseColumn;
-    }
+    const definition = getFieldDefinition(col.fieldType);
+    return {
+      ...baseColumn,
+      ...(definition.column?.(col) as Partial<ProColumns<T>> | undefined),
+    };
   });
 
   // Add actions column
@@ -197,15 +143,15 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
   const openModal = (record?: Partial<T>) => {
     setCurrentRecord(record || null);
     if (record) {
-      const values = { ...record };
+      const values: Record<string, any> = { ...record };
       columns.forEach((col) => {
         const field = col.dataIndex as string;
-        if (col.fieldType === 'date' && values[field]) {
+        const toFormValue = getFieldDefinition(col.fieldType).toFormValue;
+        if (toFormValue && values[field] !== undefined) {
           try {
-            // @ts-expect-error partial data type date handling
-            values[field] = dayjs(values[field]);
+            values[field] = toFormValue(values[field]);
           } catch {
-            // Keep original value if parsing fails
+            // Keep original value if conversion fails
           }
         }
       });
@@ -221,18 +167,20 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
       const values = await form.validateFields();
       const transformedValues = { ...values };
 
-      // Handle transformations
+      // Handle transformations: registry serialization first, then the
+      // column's own transform on top
       columns.forEach((col) => {
         const field = col.dataIndex as string;
-        if (col.fieldType === 'date' && values[field]) {
+        const fromFormValue = getFieldDefinition(col.fieldType).fromFormValue;
+        if (fromFormValue && values[field] !== undefined) {
           try {
-            transformedValues[field] = formatISO(values[field]);
+            transformedValues[field] = fromFormValue(values[field]);
           } catch {
-            // Keep original value if formatting fails
+            // Keep original value if serialization fails
           }
         }
         if (col.formConfig?.transform) {
-          transformedValues[field] = col.formConfig.transform(values[field]);
+          transformedValues[field] = col.formConfig.transform(transformedValues[field]);
         }
       });
 
@@ -368,90 +316,29 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
             const name = col.dataIndex as string;
             const label = col.title as string;
             const fieldDisabled = !(col.fieldEditable ?? true);
-            const rules = col.formConfig?.rules || (col.formConfig?.required ? [
+            const definition = getFieldDefinition(col.fieldType);
+
+            const userRules = col.formConfig?.rules || (col.formConfig?.required ? [
               { required: true, message: `${label} is required` }
             ] : []);
+            const rules = [...(definition.rules?.(col) ?? []), ...userRules];
 
             // Custom component override
-            if (col.formConfig?.component) {
-              return (
-                <Form.Item
-                  key={name}
-                  name={name}
-                  label={label}
-                  rules={rules}
-                >
-                  {col.formConfig.component}
-                </Form.Item>
-              );
-            }
+            const control = col.formConfig?.component
+              ?? definition.formControl(col, fieldDisabled);
+            if (!control) return null;
 
-            switch (col.fieldType) {
-              case 'string':
-                return (
-                  <Form.Item
-                    key={name}
-                    name={name}
-                    label={label}
-                    rules={rules}
-                  >
-                    <Input disabled={fieldDisabled} />
-                  </Form.Item>
-                );
-              case 'number':
-                return (
-                  <Form.Item
-                    key={name}
-                    name={name}
-                    label={label}
-                    rules={rules}
-                  >
-                    <InputNumber style={{ width: '100%' }} disabled={fieldDisabled} />
-                  </Form.Item>
-                );
-              case 'date':
-                return (
-                  <Form.Item
-                    key={name}
-                    name={name}
-                    label={label}
-                    rules={rules}
-                  >
-                    <DatePicker style={{ width: '100%' }} showTime disabled={fieldDisabled} />
-                  </Form.Item>
-                );
-              case 'boolean':
-                return (
-                  <Form.Item
-                    key={name}
-                    name={name}
-                    label={label}
-                    valuePropName="checked"
-                  >
-                    <Switch disabled={fieldDisabled} />
-                  </Form.Item>
-                );
-              case 'enum':
-                return (
-                  <Form.Item
-                    key={name}
-                    name={name}
-                    label={label}
-                    rules={rules}
-                  >
-                    <Select 
-                      disabled={fieldDisabled}
-                      placeholder={`Select ${label.toLowerCase()}`}
-                      options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
-                        label: option.text,
-                        value,
-                      }))} 
-                    />
-                  </Form.Item>
-                );
-              default:
-                return null;
-            }
+            return (
+              <Form.Item
+                key={name}
+                name={name}
+                label={label}
+                rules={rules}
+                valuePropName={definition.valuePropName}
+              >
+                {control}
+              </Form.Item>
+            );
           })}
         </Form>
       </Modal>
