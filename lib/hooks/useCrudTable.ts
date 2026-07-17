@@ -158,7 +158,10 @@ const createApiOperations = <T>(config: UseCrudTableConfigApi<T>): CrudOperation
 // Static data operations
 const createStaticOperations = <T>(staticData: T[], keyField: keyof T): CrudOperation<T> => {
   const data = [...staticData];
-  let nextId = Math.max(...data.map(item => Number(item[keyField]) || 0)) + 1;
+  // Math.max() over an empty spread is -Infinity, so guard the empty case
+  let nextId = data.length > 0
+    ? Math.max(...data.map(item => Number(item[keyField]) || 0)) + 1
+    : 1;
 
   return {
     getList: async (params: CrudParams) => {
