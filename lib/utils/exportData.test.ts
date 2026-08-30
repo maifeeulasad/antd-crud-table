@@ -109,3 +109,63 @@ describe('exportToXLSX', () => {
     expect(xml).not.toContain('<b>');
   });
 });
+
+describe('CSV formula injection', () => {
+  const cell = async (value: unknown): Promise<string> => {
+    exportToCSV({
+      data: [{ payload: value }],
+      columns: [{ title: 'Payload', dataIndex: 'payload' }],
+    });
+    const csv = await lastContent();
+    return csv.split('\n')[1];
+  };
+
+  it.each([
+    ['=1+1', `"'=1+1"`],
+    ['=HYPERLINK("http://evil.test","x")', `"'=HYPERLINK(""http://evil.test"",""x"")"`],
+    ['@SUM(A1:A9)', `"'@SUM(A1:A9)"`],
+    ['+1-2', `"'+1-2"`],
+    ['-1+cmd|\'/c calc\'!A0', `"'-1+cmd|'/c calc'!A0"`],
+    ['\tSUM(1)', `"'\tSUM(1)"`],
+    ['\r=1+1', `"'\r=1+1"`],
+    [' =1+1', `"' =1+1"`],
+  ])('neutralises %j', async (payload, expected) => {
+    expect(await cell(payload)).toBe(expected);
+  });
+
+  it.each([
+    ['-5', '"-5"'],
+    ['+42', '"+42"'],
+    ['-3.14', '"-3.14"'],
+    ['+3.2e4', '"+3.2e4"'],
+    ['-.5', '"-.5"'],
+    ['plain text', '"plain text"'],
+    ['a=b', '"a=b"'],
+    ['', '""'],
+  ])('leaves %j untouched', async (payload, expected) => {
+    expect(await cell(payload)).toBe(expected);
+  });
+
+  it('neutralises dangerous column headers too', async () => {
+    exportToCSV({
+      data: [{ v: 1 }],
+      columns: [{ title: '=cmd|calc', dataIndex: 'v' }],
+    });
+    expect((await lastContent()).split('\n')[0]).toBe(`"'=cmd|calc"`);
+  });
+
+  it('preserves numeric cells as numbers, not quoted formulas', async () => {
+    expect(await cell(-5)).toBe('"-5"');
+  });
+
+  it('leaves SpreadsheetML content literal - ss:Formula is never emitted', async () => {
+    exportToXLSX({
+      data: [{ v: '=1+1' }],
+      columns: [{ title: 'V', dataIndex: 'v' }],
+    });
+    const xml = await lastContent();
+    expect(xml).toContain('<Cell><Data ss:Type="String">=1+1</Data></Cell>');
+    expect(xml).not.toContain('ss:Formula');
+    expect(xml).not.toContain("'=1+1");
+  });
+});

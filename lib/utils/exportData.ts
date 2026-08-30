@@ -15,6 +15,45 @@ interface ExportOptions<T> {
 }
 
 /**
+ * Characters that make a spreadsheet treat an imported cell as a formula
+ * rather than as text (the OWASP CSV-injection set).
+ */
+const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'];
+
+/** A complete, plain numeric literal - optional sign, digits, decimal, exponent. */
+const NUMERIC_LITERAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+
+/**
+ * Neutralise CSV formula injection.
+ *
+ * Wrapping a cell in double quotes does NOT prevent evaluation: quotes are a
+ * text qualifier that Excel, LibreOffice and Sheets strip during import, after
+ * which a leading `=`, `+`, `-`, `@`, tab or CR makes the remainder a formula.
+ * Prefixing with a single quote marks the cell as text instead.
+ *
+ * Genuinely numeric values are left untouched - `-5` and `+3.2e4` are numbers,
+ * not formulas, and prefixing them would corrupt the exported data.
+ *
+ * Not applied to the SpreadsheetML export: that format carries formulas in the
+ * `ss:Formula` attribute, so `<Data ss:Type="String">` content is always
+ * literal text and a prefix there would be visible corruption.
+ */
+const neutralizeFormula = (value: string): string => {
+  if (value === '') return value;
+
+  // Checked against both the raw and the left-trimmed value: leading
+  // whitespace hides `=` from a naive first-character test, while tab and CR
+  // are themselves triggers and would be consumed by trimming.
+  const trimmed = value.trimStart();
+  if (NUMERIC_LITERAL.test(trimmed)) return value;
+
+  const startsWithTrigger = (candidate: string): boolean =>
+    candidate !== '' && FORMULA_TRIGGERS.includes(candidate[0]);
+
+  return startsWithTrigger(value) || startsWithTrigger(trimmed) ? `'${value}` : value;
+};
+
+/**
  * Convert data to CSV format
  */
 const convertToCSV = <T>(data: T[], columns: ColumnOption[]): string => {
@@ -51,11 +90,12 @@ const convertToCSV = <T>(data: T[], columns: ColumnOption[]): string => {
   });
 
   // Combine headers and rows
+  const quote = (value: string): string =>
+    `"${neutralizeFormula(value).replace(/"/g, '""')}"`;
+
   const csvContent = [
-    headers.map(h => `"${h}"`).join(','),
-    ...rows.map(row =>
-      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-    )
+    headers.map(quote).join(','),
+    ...rows.map(row => row.map(cell => quote(String(cell))).join(','))
   ].join('\n');
 
   return csvContent;
