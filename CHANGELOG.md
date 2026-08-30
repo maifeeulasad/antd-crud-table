@@ -5,11 +5,10 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] - 2026-08-30
 
-Everything below lands as **0.6.0**. It is a breaking release; see
-[MIGRATION.md](./MIGRATION.md), where every break is a compile error rather than
-a silent behaviour change.
+A breaking release. See [MIGRATION.md](./MIGRATION.md) — every break is a
+compile error rather than a silent behaviour change.
 
 ### Security
 
@@ -82,8 +81,36 @@ a silent behaviour change.
 - Hook callbacks were recreated on every render, defeating their memoization.
 - Test type declarations were being published in the package.
 
+- Test type declarations were being published in the package; 11 `*.test.d.ts`
+  files shipped in `dist`.
+- The demo and the library both built to `dist`, which is the published
+  package — a stale demo build could have been packed into a release. The demo
+  now builds to `dist-site`.
+
+### Documentation
+
+- Generated API reference (TypeDoc) covering every public export, with zero
+  undocumented members.
+- Storybook playground: one story per field type, derived from the registry so
+  new types are covered automatically, plus every data strategy and toolbar flag.
+- `pnpm build:site` produces one tree — demo at the root, Storybook under
+  `/storybook`, API reference under `/api`.
+- [REST dialect recipes](./docs/rest-recipes.md) for offset/limit, Django REST
+  Framework, JSON:API and auth. Each recipe is a compiled test, so they cannot
+  drift from the API.
+- `MIGRATION.md` covering the 0.5.x → 0.6.0 upgrade.
+- The required stylesheet import is documented, which it never was.
+
 ### Packaging
 
 - `sideEffects: ["*.css"]` and an `engines.node` floor declared.
 - Rollup's export mode stated explicitly, removing the mixed-export warnings.
-- README documents the required stylesheet import, which it never did.
+
+### Internal
+
+- Test coverage went from 42% to 91% of statements, with thresholds enforced.
+  `CrudTable.tsx` and the field registry were both at 0%.
+- Testing Library's cleanup was never registering, so renders accumulated
+  across tests in the same file.
+
+[0.6.0]: https://github.com/maifeeulasad/antd-crud-table/releases/tag/v0.6.0
