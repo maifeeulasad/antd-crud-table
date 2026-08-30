@@ -8,6 +8,10 @@
 **Supported peers:** React 18 or 19, antd 6, `@ant-design/pro-components` 2.8+.
 Both React majors are verified by the test suite.
 
+Connecting to an API that does not speak the default dialect?
+See [REST dialect recipes](./docs/rest-recipes.md) — offset/limit, Django REST
+Framework, JSON:API, and auth.
+
 ### Stylesheet
 
 The library build extracts its CSS to a separate file, so **you must import it
