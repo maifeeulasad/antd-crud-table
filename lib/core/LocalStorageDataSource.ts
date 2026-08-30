@@ -3,7 +3,9 @@ import type { CrudDraft, IdGenerator } from './types';
 
 /** Fields stamped onto records by the localStorage strategy. */
 export interface Timestamped {
+  /** ISO timestamp set once, when the record is created. */
   createdAt?: string;
+  /** ISO timestamp refreshed on every write. */
   updatedAt?: string;
 }
 

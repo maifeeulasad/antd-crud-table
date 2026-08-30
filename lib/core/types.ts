@@ -11,7 +11,9 @@ export type SortDirection = 'ascend' | 'descend';
 
 /** One sort instruction. Queries carry an ordered list to support multi-sort. */
 export interface CrudSort<T> {
+  /** The property to order by. */
   readonly field: keyof T;
+  /** Ascending or descending. */
   readonly direction: SortDirection;
 }
 
@@ -33,14 +35,19 @@ export type CrudFilters<T> = {
 export interface CrudQuery<T> {
   /** 1-based, matching ProTable's `current`. */
   readonly page: number;
+  /** Rows per page. */
   readonly pageSize: number;
+  /** Ordered sort instructions; earlier entries take precedence. */
   readonly sort?: readonly CrudSort<T>[];
+  /** Field-keyed filters. Absent keys are unfiltered. */
   readonly filters?: CrudFilters<T>;
 }
 
 /** One page of results plus the total matching the filters (not the page size). */
 export interface CrudPage<T> {
+  /** The records on this page. */
   readonly items: readonly T[];
+  /** Records matching the filters, across all pages. */
   readonly total: number;
 }
 

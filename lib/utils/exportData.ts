@@ -1,3 +1,5 @@
+import type { EnumOption } from '../fields/types';
+
 /**
  * Supported export formats.
  *
@@ -8,17 +10,27 @@
  */
 export type ExportFormat = 'csv' | 'json' | 'excel';
 
-interface ColumnOption {
+/** The column information an exporter needs: a header, a key, and how to format. */
+export interface ColumnOption {
+  /** Header text. Falls back to `dataIndex`. */
   title?: string;
+  /** The record property this column reads. */
   dataIndex?: string;
+  /** Drives value formatting for booleans, enums and dates. */
   fieldType?: string;
-  enumOptions?: Record<string, { text: string; color?: string }>;
+  /** Labels for `enum` columns, so exports carry text rather than raw keys. */
+  enumOptions?: Record<string, EnumOption>;
 }
 
-interface ExportOptions<T> {
+/** One export request. */
+export interface ExportOptions<T> {
+  /** Records to write. */
   data: T[];
+  /** Columns to include, in order. */
   columns: ColumnOption[];
+  /** Base filename; the extension is chosen by the format. Defaults to `export`. */
   filename?: string;
+  /** Output format. Defaults to `csv`. */
   format?: ExportFormat;
 }
 

@@ -13,7 +13,9 @@ import { filterRecords, sortRecords } from './inMemoryQuery';
 export abstract class InMemoryDataSource<T extends object, K extends keyof T>
   implements CrudDataSource<T, K>
 {
+  /** The property holding each record's identity. */
   protected readonly key: K;
+  /** Assigns the identity for newly created records. */
   protected readonly generateId: IdGenerator<T, K>;
 
   protected constructor(key: K, generateId?: IdGenerator<T, K>) {

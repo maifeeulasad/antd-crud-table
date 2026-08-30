@@ -13,6 +13,7 @@ export type CrudOperations<T, K extends keyof T> = Partial<CrudDataSource<T, K>>
  * surfacing as `undefined is not a function`.
  */
 export class UnsupportedOperationError extends Error {
+  /** The operation that was attempted but not supplied. */
   readonly operation: string;
 
   constructor(operation: string) {

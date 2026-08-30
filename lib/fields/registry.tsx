@@ -115,6 +115,12 @@ const DATE_TIME_DISPLAY = 'YYYY-MM-DD HH:mm';
 const DATE_DISPLAY = 'YYYY-MM-DD';
 const TIME_VALUE = 'HH:mm:ss';
 
+/**
+ * Every field type, keyed by name.
+ *
+ * Adding a column type to CrudTable means adding one entry here; nothing else
+ * dispatches on `fieldType`.
+ */
 export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
   string: {
     formControl: (_col, disabled) => <Input disabled={disabled} />,
