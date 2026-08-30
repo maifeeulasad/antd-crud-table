@@ -56,8 +56,12 @@ export type {
   Timestamped,
 } from './core';
 
+// Localization
+export { enUS, useResolvedLocale } from './locale';
+export type { CrudTableLocale, PartialCrudTableLocale, ResolvedLocale } from './locale';
+
 // Field-type registry
-export { fieldRegistry, getFieldDefinition } from './fields/registry';
+export { fieldRegistry, getFieldDefinition, defaultFieldLocale } from './fields/registry';
 export type { FieldType, FieldTypeDefinition } from './fields/registry';
 export type { EnumOption, FieldColumn } from './fields/types';
 

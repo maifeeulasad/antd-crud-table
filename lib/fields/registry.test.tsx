@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import dayjs from 'dayjs';
 
 import { fieldRegistry, getFieldDefinition } from './registry';
+import { enUS } from '../locale/en_US';
 import type { FieldType } from './registry';
 import type { FieldColumn } from './types';
 
@@ -19,7 +20,7 @@ const column = (overrides: Partial<FieldColumn> = {}): FieldColumn => ({
 /** Invoke a column's render with a record, ignoring ProTable's extra arguments. */
 const renderCell = (fieldType: FieldType, value: unknown, col = column({ fieldType })): ReactNode => {
   const definition = getFieldDefinition(fieldType);
-  const props = definition.column?.(col);
+  const props = definition.column?.(col, enUS);
   if (!props?.render) return null;
   const render = props.render as (
     dom: ReactNode,
@@ -51,7 +52,7 @@ describe('getFieldDefinition', () => {
 
 describe('every field type', () => {
   it.each(ALL_TYPES)('%s exposes a form control (or an explicit null)', (type) => {
-    const control = fieldRegistry[type].formControl(column({ fieldType: type }), false);
+    const control = fieldRegistry[type].formControl(column({ fieldType: type }), false, enUS);
     // `custom` deliberately has no control: it is supplied via formConfig.
     if (type === 'custom') {
       expect(control).toBeNull();
@@ -61,7 +62,7 @@ describe('every field type', () => {
   });
 
   it.each(ALL_TYPES)('%s passes the disabled flag through to its control', (type) => {
-    const control = fieldRegistry[type].formControl(column({ fieldType: type }), true);
+    const control = fieldRegistry[type].formControl(column({ fieldType: type }), true, enUS);
     if (control === null) return;
     expect((control as { props: { disabled?: boolean } }).props.disabled).toBe(true);
   });
@@ -150,7 +151,7 @@ describe('cell rendering', () => {
   });
 
   it('password is excluded from search by default', () => {
-    expect(getFieldDefinition('password').column?.(column())?.search).toBe(false);
+    expect(getFieldDefinition('password').column?.(column(), enUS)?.search).toBe(false);
   });
 
   it('tags renders each entry, and a dash for an empty list', () => {
@@ -201,16 +202,16 @@ describe('cell rendering', () => {
 
 describe('type-implied validation rules', () => {
   it('email and url carry a type rule', () => {
-    expect(getFieldDefinition('email').rules?.(column())).toEqual([
+    expect(getFieldDefinition('email').rules?.(column(), enUS)).toEqual([
       expect.objectContaining({ type: 'email' }),
     ]);
-    expect(getFieldDefinition('url').rules?.(column())).toEqual([
+    expect(getFieldDefinition('url').rules?.(column(), enUS)).toEqual([
       expect.objectContaining({ type: 'url' }),
     ]);
   });
 
   it('json rejects malformed input and accepts valid input', async () => {
-    const [rule] = getFieldDefinition('json').rules?.(column()) ?? [];
+    const [rule] = getFieldDefinition('json').rules?.(column(), enUS) ?? [];
     const validator = (rule as { validator: (r: unknown, v: unknown) => Promise<void> }).validator;
 
     await expect(validator(null, '{"a":1}')).resolves.toBeUndefined();
@@ -218,7 +219,7 @@ describe('type-implied validation rules', () => {
   });
 
   it('json skips validation for empty and non-string values', async () => {
-    const [rule] = getFieldDefinition('json').rules?.(column()) ?? [];
+    const [rule] = getFieldDefinition('json').rules?.(column(), enUS) ?? [];
     const validator = (rule as { validator: (r: unknown, v: unknown) => Promise<void> }).validator;
 
     await expect(validator(null, '')).resolves.toBeUndefined();
@@ -230,7 +231,7 @@ describe('type-implied validation rules', () => {
 describe('column configuration', () => {
   it('marks non-searchable types so they stay out of the search form', () => {
     for (const type of ['rating', 'progress', 'image', 'color', 'json', 'password'] as FieldType[]) {
-      expect(getFieldDefinition(type).column?.(column())?.search).toBe(false);
+      expect(getFieldDefinition(type).column?.(column(), enUS)?.search).toBe(false);
     }
   });
 
@@ -239,10 +240,10 @@ describe('column configuration', () => {
   });
 
   it('maps types onto ProTable valueTypes', () => {
-    expect(getFieldDefinition('money').column?.(column())?.valueType).toBe('money');
-    expect(getFieldDefinition('percent').column?.(column())?.valueType).toBe('percent');
-    expect(getFieldDefinition('textarea').column?.(column())?.valueType).toBe('textarea');
-    expect(getFieldDefinition('time').column?.(column())?.valueType).toBe('time');
+    expect(getFieldDefinition('money').column?.(column(), enUS)?.valueType).toBe('money');
+    expect(getFieldDefinition('percent').column?.(column(), enUS)?.valueType).toBe('percent');
+    expect(getFieldDefinition('textarea').column?.(column(), enUS)?.valueType).toBe('textarea');
+    expect(getFieldDefinition('time').column?.(column(), enUS)?.valueType).toBe('time');
   });
 });
 

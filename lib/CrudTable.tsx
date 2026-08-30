@@ -1,7 +1,7 @@
 import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
-import { Button, Dropdown, message, Modal, Form } from 'antd';
+import { ProTable, ProConfigProvider } from '@ant-design/pro-components';
+import { Button, ConfigProvider, Dropdown, message, Modal, Form } from 'antd';
 import type { FormRule } from 'antd';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
@@ -12,6 +12,8 @@ import type { CrudTableActions, UseCrudTableOptions } from './hooks/useCrudTable
 import { getFieldDefinition } from './fields/registry';
 import type { FieldType } from './fields/registry';
 import type { EnumOption, FieldColumn } from './fields/types';
+import { useResolvedLocale } from './locale/useResolvedLocale';
+import type { PartialCrudTableLocale } from './locale/types';
 import type { CrudFilters, CrudQuery, CrudSort } from './core';
 import { exportData } from './utils/exportData';
 import type { ExportFormat } from './utils/exportData';
@@ -89,6 +91,15 @@ export interface CrudTableConfig<T extends object, K extends keyof T> {
   exportScope?: 'all' | 'page';
   /** Extra per-row controls, appended after Edit and Delete. */
   customActions?: (record: T, actions: CrudTableActions<T, K>) => React.ReactNode[];
+
+  /**
+   * Overrides for the library's own wording.
+   *
+   * antd and ProTable chrome follow the surrounding `ConfigProvider`; this is
+   * for the strings the library itself produces. Anything omitted falls back
+   * to English.
+   */
+  locale?: PartialCrudTableLocale;
 }
 
 /** ProTable hands search values back as an untyped bag; this is that bag. */
@@ -168,11 +179,15 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     enableExport = true,
     exportScope = 'all',
     customActions,
+    locale,
   } = config;
+
+  const { strings, intl, antdLocale } = useResolvedLocale(locale);
 
   const crud = useCrudTable<T, K>(rowKey, {
     defaultPageSize,
     ...hookConfig,
+    locale: strings,
     // The table renders from ProTable's own request pipeline and reloads
     // through actionRef. Letting the hook also re-read would issue two list
     // requests for every write.
@@ -237,17 +252,17 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
   const handleDelete = useCallback(
     (id: T[K]) => {
       Modal.confirm({
-        title: 'Are you sure?',
-        content: 'This action cannot be undone.',
-        okText: 'Yes, Delete',
+        title: strings.confirmDeleteTitle,
+        content: strings.confirmDeleteContent,
+        okText: strings.confirmDeleteOk,
         okType: 'danger',
-        cancelText: 'Cancel',
+        cancelText: strings.cancel,
         onOk: async () => {
           if (await crud.remove(id)) crud.actionRef.current?.reload();
         },
       });
     },
-    [crud],
+    [crud, strings],
   );
 
   const enhancedColumns = useMemo<ProColumns<T>[]>(() => {
@@ -260,16 +275,16 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         title: col.title,
         search: col.searchable !== false,
       };
-      return { ...base, ...(definition.column?.(structural) as Partial<ProColumns<T>>) };
+      return { ...base, ...(definition.column?.(structural, strings) as Partial<ProColumns<T>>) };
     });
 
     mapped.push({
-      title: 'Actions',
+      title: strings.actions,
       valueType: 'option',
       width: 200,
       render: (_, record: T) => [
         <Button key="edit" type="link" size="small" onClick={() => openModal(record)}>
-          Edit
+          {strings.edit}
         </Button>,
         <Button
           key="delete"
@@ -278,14 +293,14 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
           danger
           onClick={() => handleDelete(record[rowKey])}
         >
-          Delete
+          {strings.delete}
         </Button>,
         ...(customActions?.(record, crud) ?? []),
       ],
     });
 
     return mapped;
-  }, [columns, asFieldColumn, openModal, handleDelete, rowKey, customActions, crud]);
+  }, [columns, asFieldColumn, openModal, handleDelete, rowKey, customActions, crud, strings]);
 
   const handleRequest = async (
     params: RequestParams,
@@ -346,16 +361,16 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
 
   const handleBulkDelete = () => {
     if (selectedKeys.length === 0) {
-      message.warning('Please select items to delete');
+      message.warning(strings.selectItemsToDelete);
       return;
     }
 
     Modal.confirm({
-      title: `Delete ${selectedKeys.length} items?`,
-      content: 'This action cannot be undone.',
-      okText: 'Yes, Delete All',
+      title: strings.confirmBulkDeleteTitle(selectedKeys.length),
+      content: strings.confirmDeleteContent,
+      okText: strings.confirmBulkDeleteOk,
       okType: 'danger',
-      cancelText: 'Cancel',
+      cancelText: strings.cancel,
       onOk: async () => {
         const outcomes = await Promise.all(
           selectedKeys.map(async (key) => ({
@@ -371,10 +386,14 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         setSelectedKeys(failed.map((outcome) => outcome.key));
 
         if (failed.length === 0) {
-          message.success(`Deleted ${outcomes.length} items`);
+          message.success(strings.bulkDeleteSuccess(outcomes.length));
         } else {
           message.error(
-            `Deleted ${outcomes.length - failed.length} of ${outcomes.length}. ${failed.length} failed.`,
+            strings.bulkDeletePartial(
+              outcomes.length - failed.length,
+              outcomes.length,
+              failed.length,
+            ),
           );
         }
 
@@ -404,7 +423,7 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         : visibleRows.current;
 
       if (rows.length === 0) {
-        message.warning('Nothing to export');
+        message.warning(strings.nothingToExport);
         return;
       }
 
@@ -427,7 +446,7 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     } catch (thrown) {
       const error = toError(thrown);
       hookConfig.onError?.('list', error);
-      message.error(`Export failed: ${error.message}`);
+      message.error(strings.exportFailed(error.message));
     } finally {
       setExporting(false);
     }
@@ -435,10 +454,10 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
 
   // The label states the scope outright: "Export CSV" on page 3 of 500 writing
   // ten rows was correct-looking and wrong.
-  const exportLabel = canExportAll ? 'Export all' : 'Export page';
+  const exportLabel = canExportAll ? strings.exportAll : strings.exportPage;
 
-  return (
-    <ProConfigProvider needDeps intl={enUSIntl}>
+  const table = (
+    <ProConfigProvider needDeps intl={intl}>
       <ProTable<T>
         headerTitle={title}
         rowKey={rowKey as string}
@@ -453,12 +472,12 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         }
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
-            New
+            {strings.create}
           </Button>,
           ...(enableBulkOperations && selectedKeys.length > 0
             ? [
                 <Button key="bulk-delete" danger onClick={handleBulkDelete}>
-                  Delete Selected ({selectedKeys.length})
+                  {strings.deleteSelected(selectedKeys.length)}
                 </Button>,
               ]
             : []),
@@ -470,26 +489,26 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
                   ? [
                       {
                         key: 'export-csv',
-                        label: `${exportLabel} as CSV`,
+                        label: exportLabel('CSV'),
                         disabled: exporting,
                         onClick: () => void handleExport('csv'),
                       },
                       {
                         key: 'export-json',
-                        label: `${exportLabel} as JSON`,
+                        label: exportLabel('JSON'),
                         disabled: exporting,
                         onClick: () => void handleExport('json'),
                       },
                       {
                         key: 'export-excel',
-                        label: `${exportLabel} as Excel`,
+                        label: exportLabel('Excel'),
                         disabled: exporting,
                         onClick: () => void handleExport('excel'),
                       },
                       { type: 'divider' as const },
                     ]
                   : []),
-                { key: 'refresh', label: 'Refresh', onClick: () => crud.actionRef.current?.reload() },
+                { key: 'refresh', label: strings.refresh, onClick: () => crud.actionRef.current?.reload() },
               ],
             }}
           >
@@ -507,7 +526,7 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
       />
 
       <Modal
-        title={editing ? 'Edit Item' : 'Create Item'}
+        title={editing ? strings.editTitle : strings.createTitle}
         open={modalOpen}
         onOk={handleOk}
         onCancel={() => setModalOpen(false)}
@@ -516,8 +535,8 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         // antd's default locale and renders Chinese buttons. Stated
         // explicitly, matching the Modal.confirm calls and every other
         // hardcoded string in this component.
-        okText="OK"
-        cancelText="Cancel"
+        okText={strings.ok}
+        cancelText={strings.cancel}
         destroyOnHidden
         width={600}
       >
@@ -531,11 +550,12 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
             const userRules =
               col.formConfig?.rules ??
               (col.formConfig?.required
-                ? [{ required: true, message: `${col.title} is required` }]
+                ? [{ required: true, message: strings.requiredField(col.title) }]
                 : []);
-            const rules: FormRule[] = [...(definition.rules?.(structural) ?? []), ...userRules];
+            const rules: FormRule[] = [...(definition.rules?.(structural, strings) ?? []), ...userRules];
 
-            const control = col.formConfig?.component ?? definition.formControl(structural, disabled);
+            const control =
+              col.formConfig?.component ?? definition.formControl(structural, disabled, strings);
             if (!control) return null;
 
             return (
@@ -554,6 +574,14 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
       </Modal>
     </ProConfigProvider>
   );
+
+  // antd's own components - pagination, empty states, the modal footer - read
+  // antd's ConfigProvider, which ProTable's `intl` does not feed. With no
+  // provider in the tree they fall back to antd's built-in defaults, which is
+  // how a table outside a ConfigProvider ended up with English ProTable chrome
+  // beside Chinese pagination. Supplying one only in that case makes the
+  // default coherent without relabelling a consumer's own subtree.
+  return antdLocale ? <ConfigProvider locale={antdLocale}>{table}</ConfigProvider> : table;
 };
 
 export default CrudTable;

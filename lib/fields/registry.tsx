@@ -4,6 +4,8 @@ import type { FormRule } from 'antd';
 import dayjs from 'dayjs';
 
 import type { EnumOption, FieldColumn } from './types';
+import { enUS } from '../locale/en_US';
+import type { CrudTableLocale } from '../locale/types';
 
 /** Every column type CrudTable understands. */
 export type FieldType =
@@ -36,15 +38,22 @@ export type FieldType =
  */
 export interface FieldTypeDefinition {
   /** Extra ProColumns props merged over the base column (valueType, render, ...). */
-  column?: (col: FieldColumn) => Partial<ProColumns<Record<PropertyKey, unknown>>>;
+  column?: (
+    col: FieldColumn,
+    locale: CrudTableLocale,
+  ) => Partial<ProColumns<Record<PropertyKey, unknown>>>;
   /** The antd control used in the create/edit modal. Return null for "no form field". */
-  formControl: (col: FieldColumn, disabled: boolean) => React.ReactNode | null;
+  formControl: (
+    col: FieldColumn,
+    disabled: boolean,
+    locale: CrudTableLocale,
+  ) => React.ReactNode | null;
   /** Convert a record value into what the form control expects. */
   toFormValue?: (value: unknown) => unknown;
   /** Convert the submitted form value back into the record shape. */
   fromFormValue?: (value: unknown) => unknown;
   /** Validation rules implied by the type itself (merged before user rules). */
-  rules?: (col: FieldColumn) => FormRule[];
+  rules?: (col: FieldColumn, locale: CrudTableLocale) => FormRule[];
   /** Form.Item valuePropName override (e.g. 'checked' for Switch). */
   valuePropName?: string;
 }
@@ -140,11 +149,11 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
   },
 
   date: {
-    column: (col) => ({
+    column: (col, locale) => ({
       valueType: 'dateTime',
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!value) return '-';
+        if (!value) return locale.empty;
         const parsed = dayjs(asText(value));
         return <span>{parsed.isValid() ? parsed.format(DATE_TIME_DISPLAY) : asText(value)}</span>;
       },
@@ -158,11 +167,11 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
   },
 
   boolean: {
-    column: (col) => ({
+    column: (col, locale) => ({
       valueType: 'switch',
       render: (_, record) => (
         <Tag color={cellValue(col, record) ? 'green' : 'red'}>
-          {cellValue(col, record) ? 'Yes' : 'No'}
+          {cellValue(col, record) ? locale.yes : locale.no}
         </Tag>
       ),
     }),
@@ -180,10 +189,10 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         return option ? <Tag color={option.color}>{option.text}</Tag> : asText(value);
       },
     }),
-    formControl: (col, disabled) => (
+    formControl: (col, disabled, locale) => (
       <Select
         disabled={disabled}
-        placeholder={`Select ${col.title.toLowerCase()}`}
+        placeholder={locale.selectPlaceholder(col.title)}
         options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
           label: option.text,
           value,
@@ -209,24 +218,24 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
   },
 
   email: {
-    column: (col) => ({
+    column: (col, locale) => ({
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!isPresent(value)) return '-';
+        if (!isPresent(value)) return locale.empty;
         const address = asText(value);
         if (!hasSafeScheme(address, MAIL_SCHEMES)) return <span>{address}</span>;
         return <a href={`mailto:${encodeURIComponent(address)}`}>{address}</a>;
       },
     }),
     formControl: (_col, disabled) => <Input type="email" disabled={disabled} />,
-    rules: () => [{ type: 'email', message: 'Please enter a valid email' }],
+    rules: (_col, locale) => [{ type: 'email', message: locale.invalidEmail }],
   },
 
   url: {
-    column: (col) => ({
+    column: (col, locale) => ({
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!isPresent(value)) return '-';
+        if (!isPresent(value)) return locale.empty;
         const href = asText(value);
         // An unsafe scheme renders as inert text: the value is still visible,
         // it simply is not clickable.
@@ -239,14 +248,14 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       },
     }),
     formControl: (_col, disabled) => <Input disabled={disabled} />,
-    rules: () => [{ type: 'url', message: 'Please enter a valid URL' }],
+    rules: (_col, locale) => [{ type: 'url', message: locale.invalidUrl }],
   },
 
   password: {
     // Never show the value in the table, and keep it out of search by default
-    column: (col) => ({
+    column: (col, locale) => ({
       search: false,
-      render: (_, record) => (isPresent(cellValue(col, record)) ? '••••••••' : '-'),
+      render: (_, record) => (isPresent(cellValue(col, record)) ? '••••••••' : locale.empty),
     }),
     formControl: (_col, disabled) => <Input.Password disabled={disabled} />,
   },
@@ -307,11 +316,11 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 
   // Stored as a [startISO, endISO] tuple
   dateRange: {
-    column: (col) => ({
+    column: (col, locale) => ({
       valueType: 'dateRange',
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!Array.isArray(value) || value.length !== 2) return '-';
+        if (!Array.isArray(value) || value.length !== 2) return locale.empty;
         const [start, end] = value.map((v) => dayjs(asText(v)));
         if (!start.isValid() || !end.isValid()) return asText(value);
         return `${start.format(DATE_DISPLAY)} ~ ${end.format(DATE_DISPLAY)}`;
@@ -330,10 +339,10 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 
   // Stored as string[]
   tags: {
-    column: (col) => ({
+    column: (col, locale) => ({
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!Array.isArray(value) || value.length === 0) return '-';
+        if (!Array.isArray(value) || value.length === 0) return locale.empty;
         return (
           <>
             {value.map((tag) => (
@@ -343,18 +352,18 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         );
       },
     }),
-    formControl: (_col, disabled) => (
-      <Select mode="tags" open={false} suffixIcon={null} disabled={disabled} placeholder="Type and press enter" />
+    formControl: (_col, disabled, locale) => (
+      <Select mode="tags" open={false} suffixIcon={null} disabled={disabled} placeholder={locale.tagsPlaceholder} />
     ),
   },
 
   // Stored as an image URL
   image: {
-    column: (col) => ({
+    column: (col, locale) => ({
       search: false,
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!isPresent(value)) return '-';
+        if (!isPresent(value)) return locale.empty;
         const src = asText(value);
         if (!isSafeImageSource(src)) return <span>{src}</span>;
         return <Image src={src} width={48} height={48} style={{ objectFit: 'cover' }} />;
@@ -363,16 +372,16 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <Input placeholder="https://..." disabled={disabled} />
     ),
-    rules: () => [{ type: 'url', message: 'Please enter a valid image URL' }],
+    rules: (_col, locale) => [{ type: 'url', message: locale.invalidImageUrl }],
   },
 
   // Stored as a hex string
   color: {
-    column: (col) => ({
+    column: (col, locale) => ({
       search: false,
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!isPresent(value)) return '-';
+        if (!isPresent(value)) return locale.empty;
         const hex = asText(value);
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -400,12 +409,12 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 
   // Stored as a plain object/array
   json: {
-    column: (col) => ({
+    column: (col, locale) => ({
       search: false,
       ellipsis: true,
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (value === undefined || value === null) return '-';
+        if (value === undefined || value === null) return locale.empty;
         return <Typography.Text code>{JSON.stringify(value)}</Typography.Text>;
       },
     }),
@@ -415,7 +424,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     toFormValue: (value) =>
       typeof value === 'string' ? value : JSON.stringify(value, null, 2),
     fromFormValue: (value) => (typeof value === 'string' && value.trim() !== '' ? JSON.parse(value) : value),
-    rules: () => [
+    rules: (_col, locale) => [
       {
         validator: async (_rule: unknown, value: unknown) => {
           if (value === undefined || value === null || value === '') return;
@@ -423,7 +432,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
           try {
             JSON.parse(value);
           } catch {
-            throw new Error('Please enter valid JSON');
+            throw new Error(locale.invalidJson);
           }
         },
       },
@@ -434,5 +443,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 /** Look up a field type, falling back to `string` so every column gets a form control. */
 export const getFieldDefinition = (fieldType?: FieldType): FieldTypeDefinition =>
   fieldRegistry[fieldType ?? 'string'] ?? fieldRegistry.string;
+
+/** The strings a field definition falls back to when a caller passes none. */
+export const defaultFieldLocale: CrudTableLocale = enUS;
 
 export type { EnumOption, FieldColumn };

@@ -189,6 +189,20 @@ extracts CSS to a separate file, so it has to be imported once.
 import 'antd-crud-table/styles.css';
 ```
 
+### 8e. Localization
+
+Not a break, but a behaviour change worth knowing: the table now follows the
+surrounding antd `ConfigProvider` instead of pinning ProTable to English. If
+your app sets a non-English locale, the table's chrome will now follow it.
+
+With no provider present the table supplies English, which is what previously
+leaked antd's Chinese defaults into the pagination and modal footer.
+
+`FieldTypeDefinition` hooks take an extra `locale` argument — `column(col,
+locale)`, `formControl(col, disabled, locale)` and `rules(col, locale)`. This
+only affects code that registers custom field types or calls the registry
+directly.
+
 ### 9. New capabilities
 
 - `dataSource` strategy — construct and own a source directly
