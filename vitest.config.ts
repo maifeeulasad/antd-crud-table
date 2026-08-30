@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['lib/**/*.test.{ts,tsx}'],
+    include: ['lib/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
     // Component tests mount ProTable, which pulls in antd's config provider,
     // table, form and portal machinery. That is genuinely slow, and slower
     // again under coverage instrumentation, so the 5s default is too tight.

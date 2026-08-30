@@ -29,6 +29,7 @@
   },
   "include": [
     "src",
-    "lib"
+    "lib",
+    "scripts"
   ]
 }
