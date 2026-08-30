@@ -1,22 +1,288 @@
+<div align="center">
 
+# antd-crud-table
 
-# 🧩 `antd-crud-table` – A Dynamic React Table Generator with Forms 🚀
+**A typed, schema-driven CRUD table for React — built on [antd](https://ant.design) and [ProComponents](https://procomponents.ant.design).**
 
-`antd-crud-table` is a highly flexible and powerful React library built using `antd` and `@ant-design/pro-components`. It provides both a declarative component-based approach and a modern hook-based architecture for creating editable, paginated tables with form support, data fetching, sorting, filtering, and custom rendering. Perfect for building admin dashboards and data management UIs with minimal boilerplate.
+Describe your columns once and get a paginated, searchable, sortable table with a
+create/edit form, delete confirmations, bulk actions and export — wired to static
+data, a REST API, `localStorage`, or anything you implement yourself.
 
+[![npm](https://img.shields.io/npm/v/antd-crud-table?color=1677ff)](https://www.npmjs.com/package/antd-crud-table)
+[![license](https://img.shields.io/npm/l/antd-crud-table?color=52c41a)](./LICENSE)
+[![React](https://img.shields.io/badge/react-18%20%7C%2019-61dafb)](https://react.dev)
+[![types](https://img.shields.io/badge/types-strict-3178c6)](https://www.typescriptlang.org)
 
-**Supported peers:** React 18 or 19, antd 6, `@ant-design/pro-components` 2.8+.
-Both React majors are verified by the test suite.
+[**Live demo**](https://maifeeulasad.github.io/antd-crud-table/) ·
+[**Storybook**](https://maifeeulasad.github.io/antd-crud-table/storybook/) ·
+[**API reference**](https://maifeeulasad.github.io/antd-crud-table/api/) ·
+[**Changelog**](./CHANGELOG.md)
 
-Connecting to an API that does not speak the default dialect?
-See [REST dialect recipes](./docs/rest-recipes.md) — offset/limit, Django REST
-Framework, JSON:API, and auth.
+</div>
 
-### Localization
+---
 
-The table follows the antd `ConfigProvider` around it, so setting your app
-locale once localizes the pagination, date pickers, empty states and the
-ProTable chrome:
+## Why
+
+Most table libraries hand you a grid and leave the CRUD to you. This one takes a
+column schema and derives the whole surface from it — the cell renderer, the form
+control, the validation, and the value conversion in both directions.
+
+```tsx
+<CrudTable<User, 'id'>
+  title="Users"
+  rowKey="id"
+  columns={[
+    { dataIndex: 'name',  title: 'Name',  fieldType: 'string', formConfig: { required: true } },
+    { dataIndex: 'email', title: 'Email', fieldType: 'email' },
+    { dataIndex: 'joined', title: 'Joined', fieldType: 'date' },
+  ]}
+  hookConfig={{
+    api: {
+      baseUrl: '/api',
+      endpoints: { list: '/users', create: '/users', update: '/users', remove: '/users' },
+    },
+  }}
+/>
+```
+
+That renders a searchable, sortable, paginated table with a working create/edit
+form, confirmed deletes, and CSV/JSON/Excel export.
+
+## Highlights
+
+- **Strictly typed.** `dataIndex` is bound to `keyof T`, record ids are `T[K]`, and
+  `customRender`/`transform` receive that property's own type. No `any` in the
+  public API.
+- **20 field types** — each one entry in a registry declaring its cell renderer,
+  form control, implied validation and value round-trip.
+- **Four data strategies** behind one `CrudDataSource` interface: static, REST,
+  `localStorage`, or your own. Swap backends without touching your columns.
+- **Localized.** Every string is overridable, and the table follows the antd
+  `ConfigProvider` around it.
+- **Export** to CSV, JSON and Excel, covering the whole filtered result set —
+  with CSV formula injection neutralised.
+- **Zero runtime dependencies.** Everything is a peer you already have.
+
+## Installation
+
+```bash
+npm install antd-crud-table
+```
+
+```bash
+pnpm add antd-crud-table
+```
+
+### Peer dependencies
+
+| Package | Version |
+|---|---|
+| `react`, `react-dom` | `^18` or `^19` |
+| `antd` | `^6.3.6` |
+| `@ant-design/icons` | `^6` |
+| `@ant-design/pro-components` | `^2.8.10` |
+| `dayjs` | `^1.11.13` |
+
+### Stylesheet
+
+The build extracts CSS to a separate file, so **import it once** — importing the
+component alone leaves the table unstyled:
+
+```ts
+import 'antd-crud-table/styles.css';
+```
+
+## Quick start
+
+```tsx
+import { CrudTable } from 'antd-crud-table';
+import type { CrudColumn } from 'antd-crud-table';
+import 'antd-crud-table/styles.css';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  joined: string;
+}
+
+const columns: CrudColumn<User>[] = [
+  { dataIndex: 'name', title: 'Name', fieldType: 'string', formConfig: { required: true } },
+  { dataIndex: 'email', title: 'Email', fieldType: 'email' },
+  {
+    dataIndex: 'status',
+    title: 'Status',
+    fieldType: 'enum',
+    enumOptions: {
+      active: { text: 'Active', color: 'green' },
+      inactive: { text: 'Inactive', color: 'red' },
+    },
+  },
+  { dataIndex: 'joined', title: 'Joined', fieldType: 'date' },
+];
+
+export const Users = () => (
+  <CrudTable<User, 'id'>
+    title="Users"
+    rowKey="id"
+    columns={columns}
+    defaultPageSize={10}
+    enableBulkOperations
+    hookConfig={{
+      api: {
+        baseUrl: '/api',
+        endpoints: { list: '/users', create: '/users', update: '/users', remove: '/users' },
+      },
+    }}
+  />
+);
+```
+
+The second type parameter is the row key. It is what makes ids typed: `remove(id)`
+takes a `number` here, not `any`.
+
+## Data strategies
+
+Every strategy implements the same `CrudDataSource<T, K>` interface, so the
+columns and behaviour are identical and only the wiring differs.
+
+### Static data
+
+```tsx
+hookConfig={{ staticData: users }}
+```
+
+In-memory, seeded once. Edits persist for the session. Good for demos, fixtures
+and tests.
+
+### REST API
+
+```tsx
+hookConfig={{
+  api: {
+    baseUrl: '/api',
+    endpoints: { list: '/users', create: '/users', update: '/users', remove: '/users' },
+  },
+}}
+```
+
+Endpoints default to `/list`, `/create`, `/update` and `/delete` under `baseUrl`,
+so a conventional collection needs them stated as above. Paging defaults to
+`current`/`pageSize`, and updates to `PUT {update}/:id`. For an API that
+speaks a different dialect, `paramNames`, `methods`, `serializeRequest` and
+`parseResponse` cover most of it declaratively — see
+**[REST dialect recipes](./docs/rest-recipes.md)** for offset/limit, Django REST
+Framework, JSON:API and auth.
+
+Failures throw `RestError`, carrying `status` and `body` so you can branch on a
+422 rather than parsing a message.
+
+### localStorage
+
+```tsx
+hookConfig={{ storageKey: 'my-users', initialData: seed }}
+```
+
+Persists across reloads and stamps `createdAt` / `updatedAt`.
+
+### Your own
+
+```tsx
+hookConfig={{
+  operations: {
+    list: async (query) => ({ items: await db.find(query), total: await db.count() }),
+    create: async (draft) => db.insert(draft),
+    update: async (id, draft) => db.update(id, draft),
+    remove: async (id) => db.delete(id),
+  },
+}}
+```
+
+Omitted operations fail with a message naming what is missing, rather than on
+`undefined`. For full control, construct a `CrudDataSource` and pass it as
+`dataSource`.
+
+## Columns
+
+```ts
+interface CrudColumnFor<T, K extends keyof T> {
+  dataIndex: K;                                   // must be a real key of T
+  title: string;                                  // header, and the form label
+  fieldType?: FieldType;                          // defaults to 'string'
+  enumOptions?: Record<string, EnumOption>;       // for 'enum'
+  customRender?: (value: T[K], record: T) => ReactNode;
+  formConfig?: {
+    required?: boolean;
+    component?: ReactNode;                        // replace the control entirely
+    transform?: (value: T[K]) => T[K];            // applied before writing
+    rules?: FormRule[];                           // antd validation rules
+  };
+  fieldEditable?: boolean;                        // default true
+  searchable?: boolean;                           // default true
+}
+```
+
+`CrudColumn<T>` is the union across every key of `T`, so an array annotated
+`CrudColumn<User>[]` keeps each column's callbacks bound to its own property type.
+Naming a property that does not exist on `T` is a compile error.
+
+### Field types
+
+| Type | Cell | Form control |
+|---|---|---|
+| `string` | text | `Input` |
+| `textarea` | truncated text | `Input.TextArea` |
+| `number` | locale-grouped | `InputNumber` |
+| `money` | currency | `InputNumber` (2 dp) |
+| `percent` | percentage | `InputNumber` with `%` |
+| `boolean` | Yes/No tag | `Switch` |
+| `enum` | coloured tag | `Select` |
+| `date` | formatted datetime | `DatePicker` |
+| `time` | time | `TimePicker` |
+| `dateRange` | `start ~ end` | `RangePicker` |
+| `email` | `mailto:` link | `Input` + email rule |
+| `url` | external link | `Input` + url rule |
+| `password` | `••••••••` | `Input.Password` |
+| `rating` | `Rate` | `Rate` |
+| `progress` | `Progress` | `InputNumber` |
+| `tags` | tag list | tag `Select` |
+| `image` | thumbnail | `Input` |
+| `color` | swatch + hex | `ColorPicker` |
+| `json` | inline code | monospace `TextArea` |
+| `custom` | your `customRender` | your `formConfig.component` |
+
+Each type is one entry in `fieldRegistry` declaring its renderer, control,
+validation and `toFormValue`/`fromFormValue` conversion — so a value survives the
+round-trip into the edit form and back. Browse them all in the
+[Storybook](https://maifeeulasad.github.io/antd-crud-table/storybook/).
+
+**Security note:** `password` values are masked in the table and excluded from
+exports. `url`, `email` and `image` render only `http`/`https` (plus `mailto:`)
+targets — a `javascript:` value renders as inert text rather than a clickable
+link.
+
+## Options
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `title` | `string` | — | Header, and the export filename |
+| `rowKey` | `K` | — | Identity property |
+| `columns` | `CrudColumn<T>[]` | — | Column definitions |
+| `hookConfig` | `UseCrudTableOptions<T, K>` | — | Data strategy |
+| `defaultPageSize` | `number` | `10` | Rows per page |
+| `enableBulkOperations` | `boolean` | `false` | Row selection and bulk delete |
+| `enableColumnSettings` | `boolean` | `true` | Column visibility and density |
+| `enableExport` | `boolean` | `true` | Export menu entries |
+| `exportScope` | `'all' \| 'page'` | `'all'` | Whole result set, or visible rows |
+| `customActions` | `(record, actions) => ReactNode[]` | — | Extra row controls |
+| `locale` | `PartialCrudTableLocale` | English | String overrides |
+
+## Localization
+
+The table follows the antd `ConfigProvider` around it, so setting your app locale
+once localizes pagination, date pickers, empty states and the ProTable chrome:
 
 ```tsx
 import { ConfigProvider } from 'antd';
@@ -27,13 +293,10 @@ import frFR from 'antd/locale/fr_FR';
 </ConfigProvider>
 ```
 
-**With no `ConfigProvider` in the tree the table supplies English itself.**
-antd components otherwise fall back to their own built-in defaults, which is
-why a table used outside a provider previously showed Chinese pagination and
-modal buttons beside English ProTable chrome.
+**With no `ConfigProvider` in the tree the table supplies English itself** — antd
+components otherwise fall back to their own built-in defaults.
 
-The library's own wording — `Actions`, `Edit`, `New`, the confirmations, the
-export menu, the toasts — comes from a `locale` prop. Supply only what you want
+The library's own wording comes from the `locale` prop. Supply only what you want
 to change; anything omitted stays English:
 
 ```tsx
@@ -50,856 +313,76 @@ to change; anything omitted stays English:
 />
 ```
 
-Interpolated strings are functions rather than templates with placeholders, so
-a translation cannot silently drop a value or reorder its arguments — the
-compiler checks it. The full contract is `CrudTableLocale`, and `enUS` is the
-exported default.
+Interpolated strings are functions rather than templates with placeholders, so a
+translation cannot silently drop a value or reorder its arguments. The full
+contract is `CrudTableLocale`; `enUS` is the exported default.
 
-### Stylesheet
+## Export
 
-The library build extracts its CSS to a separate file, so **you must import it
-once** — importing the component alone leaves the table unstyled:
+The toolbar menu writes **the whole filtered result set**, not just the visible
+page, using the data source's `listAll`. The labels state which they will do —
+`Export all as CSV` or `Export page as CSV` when the source cannot list without
+pagination. Set `exportScope: 'page'` to opt out.
 
-```ts
-import 'antd-crud-table/styles.css';
+| Format | Output |
+|---|---|
+| `csv` | `.csv`, formula-injection safe |
+| `json` | `.json`, the raw records |
+| `excel` | `.xls`, Excel 2003 SpreadsheetML |
+
+Cells beginning `=`, `+`, `-`, `@`, tab or CR are prefixed so spreadsheets treat
+them as text. Quoting alone does not prevent evaluation, and row content in a CRUD
+table is exactly the untrusted input an attacker controls. Genuine numbers are
+left alone.
+
+> **Excel note:** `excel` emits SpreadsheetML in a `.xls` file rather than OOXML,
+> which would mean taking on a ZIP implementation. Excel 2016+ shows a
+> format/extension mismatch prompt on open; the file is intact. Use CSV if you
+> need a prompt-free export.
+
+## Using the hook directly
+
+`useCrudTable` works without the table when you want your own UI:
+
+```tsx
+const crud = useCrudTable<User, 'id'>('id', { storageKey: 'users' });
+
+crud.state;                 // { loading, error, data, total, page, pageSize }
+await crud.create({ name: 'Ada' });
+await crud.update(1, { name: 'Ada L.' });
+await crud.remove(1);
 ```
 
-> **Upgrading from 0.5.x?** 0.6.0 makes the API strictly typed and replaces the
-> data strategies with classes behind a single `CrudDataSource` interface.
-> See [MIGRATION.md](./MIGRATION.md) — every break is a compile error, not a
-> silent behaviour change.
+`onSuccess` and `onError` fire for every operation — including list failures, with
+the original `Error` rather than a flattened string.
 
-## 📋 API Reference
+## Documentation
 
-### CrudTable Props
+| | |
+|---|---|
+| [Live demo](https://maifeeulasad.github.io/antd-crud-table/) | Every strategy, running |
+| [Storybook](https://maifeeulasad.github.io/antd-crud-table/storybook/) | One story per field type |
+| [API reference](https://maifeeulasad.github.io/antd-crud-table/api/) | Generated from the types |
+| [REST recipes](./docs/rest-recipes.md) | Non-default API dialects |
+| [Migration guide](./MIGRATION.md) | Upgrading from 0.5.x |
+| [Changelog](./CHANGELOG.md) | Release history |
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `title` | `string` | Table header title |
-| `rowKey` | `keyof T` | Unique identifier for each row |
-| `columns` | `CrudColumn<T>[]` | Column definitions with |
-| `hookConfig` | `UseCrudTableConfig<T>` | Hook configuration for data operations |
-| `defaultPageSize?` | `number` | Initial page size (default: 10) |
-| `enableBulkOperations?` | `boolean` | Enable bulk select/delete (default: false) |
-| `customActions?` | `(record, actions) => ReactNode[]` | Custom row actions |ased Architecture**
-
-Latest version introduces a powerful hook-based architecture with multiple data source strategies:
-- **Static Data**: Perfect for prototypes and small datasets
-- **API Integration**: REST API support with automatic request handling
-- **Custom Operations**: Full control with GraphQL, IndexedDB, or custom logic
-- **Built-in State Management**: Loading states, error handling, optimistic updates
-
----
-
-## 📦 Installation
+## Development
 
 ```bash
-npm install antd-crud-table
+pnpm install
+pnpm dev              # demo app
+pnpm storybook        # component playground
+pnpm test             # unit and component tests
+pnpm test:coverage    # with enforced thresholds
+pnpm lint
+pnpm build:lib        # the published package
+pnpm build:site       # demo + storybook + api reference
 ```
 
-**Peer Dependencies:**
-```bash
-npm install react react-dom antd @ant-design/pro-components
-```
+Contributions are welcome. Tests and lint run on every pull request against both
+React 18 and 19.
 
----
+## License
 
-## 🚀 Quick Start
-
-Choose your preferred approach:
-
-### Modern Approach - Hook-Based
-
-```tsx
-import { CrudTable } from 'antd-crud-table';
-
-// Static data example
-const UserManagement = () => (
-  <CrudTable<User>
-    title="User Management"
-    rowKey="id"
-    hookConfig={{
-      staticData: users, // Your data array
-      optimisticUpdates: true,
-    }}
-    columns={[
-      {
-        title: 'Name',
-        dataIndex: 'name',
-        fieldType: 'string',
-        formConfig: { required: true },
-      },
-      {
-        title: 'Status',
-        dataIndex: 'status',
-        fieldType: 'enum',
-        enumOptions: {
-          active: { text: 'Active', color: 'green' },
-          inactive: { text: 'Inactive', color: 'orange' },
-        },
-      },
-    ]}
-  />
-);
-```
-
-### Classic Approach (Original) - Service-Based
-
-```tsx
-import { CrudTable } from 'antd-crud-table';
-
-const userService = {
-  getList: async () => ({ data: [], total: 0 }),
-  create: async (data) => data,
-  update: async (id, data) => data,
-  delete: async (id) => {},
-};
-
-const UserTable = () => (
-  <CrudTable
-    title="User Management"
-    rowKey="id"
-    service={userService}
-    columns={[
-      {
-        title: 'Name',
-        dataIndex: 'name',
-        fieldType: 'string',
-        fieldEditable: true,
-        formConfig: { required: true },
-      },
-    ]}
-  />
-);
-```
-
----
-
-## 🎯 **Enhanced Features**
-
-### 1. **Multiple Data Source Strategies**
-
-#### Static Data (Perfect for Prototyping)
-```tsx
-<CrudTable
-  hookConfig={{
-    staticData: mockUsers,
-    optimisticUpdates: true,
-  }}
-  // ... other props
-/>
-```
-
-#### API Integration (Production Ready)
-```tsx
-<CrudTable
-  hookConfig={{
-    api: {
-      baseUrl: 'https://api.example.com',
-      endpoints: {
-        list: '/users',
-        create: '/users', 
-        update: '/users',
-        delete: '/users',
-      },
-      headers: {
-        'Authorization': 'Bearer your-token',
-      },
-      transform: {
-        response: (data) => ({
-          data: data.users,
-          total: data.totalCount,
-        }),
-        request: (data) => ({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        }),
-      },
-    },
-    onSuccess: (operation, data) => {
-      console.log(`${operation} completed`, data);
-    },
-    onError: (operation, error) => {
-      console.error(`${operation} failed`, error);
-    },
-  }}
-  // ... other props
-/>
-```
-
-#### Custom Operations (Maximum Flexibility)
-```tsx
-<CrudTable
-  hookConfig={{
-    operations: {
-      getList: async (params) => {
-        const result = await myGraphQLQuery(params);
-        return {
-          data: result.users,
-          total: result.totalCount,
-          success: true,
-        };
-      },
-      create: async (data) => await myCreateMutation(data),
-      update: async (id, data) => await myUpdateMutation(id, data),
-      delete: async (id) => await myDeleteMutation(id),
-    },
-  }}
-  // ... other props
-/>
-```
-
-### 2. **Advanced Features**
-
-#### Bulk Operations
-```tsx
-<CrudTable
-  enableBulkOperations={true}
-  // Automatically adds bulk select and delete functionality
-/>
-```
-
-#### Custom Actions
-```tsx
-<CrudTable
-  customActions={(record, actions) => [
-    <Button
-      key="export"
-      onClick={() => exportUser(record)}
-    >
-      Export
-    </Button>,
-    <Button
-      key="clone"
-      onClick={() => actions.create({...record, id: undefined})}
-    >
-      Clone
-    </Button>
-  ]}
-/>
-```
-
-#### Validation
-```tsx
-columns={[
-  {
-    dataIndex: 'email',
-    title: 'Email',
-    fieldType: 'string',
-    formConfig: {
-      required: true,
-      rules: [
-        { required: true, message: 'Email is required' },
-        { type: 'email', message: 'Invalid email format' },
-        { 
-          validator: async (_, value) => {
-            const exists = await checkEmailExists(value);
-            if (exists) throw new Error('Email already exists');
-          }
-        }
-      ],
-    },
-  },
-]}
-```
-
-### 3. **Custom Hooks**
-
-Create your own specialized hooks for different use cases:
-
-#### Example 1: useUserCrud - Specialized User Management
-```tsx
-import { useCrudTable, type UseCrudTableConfig } from 'antd-crud-table';
-
-export const useUserCrud = (baseConfig?: Partial<UseCrudTableConfig<any>['api']>) => {
-  const config: UseCrudTableConfig<any> = {
-    api: {
-      baseUrl: '/api/users',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      transform: {
-        request: (data) => ({
-          ...data,
-          // Add default values or transformations
-          updatedAt: new Date().toISOString(),
-        }),
-        response: (data) => ({
-          data: data.users || data.data || [],
-          total: data.total || data.count || 0,
-          success: true,
-        }),
-      },
-      ...baseConfig,
-    },
-    defaultPageSize: 10,
-    optimisticUpdates: true,
-    onSuccess: (operation, data) => {
-      console.log(`User ${operation} completed:`, data);
-    },
-    onError: (operation, error) => {
-      console.error(`User ${operation} failed:`, error);
-      // Could add toast notifications, error reporting, etc.
-    },
-  };
-
-  return useCrudTable('id', config);
-};
-```
-
-#### Example 2: useLocalStorageCrud - Local Storage Persistence
-```tsx
-export const useLocalStorageCrud = <T extends Record<string, any>>(
-  storageKey: string,
-  rowKey: keyof T,
-  initialData: T[] = []
-) => {
-  const getStoredData = (): T[] => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : initialData;
-    } catch {
-      return initialData;
-    }
-  };
-
-  const setStoredData = (data: T[]) => {
-    localStorage.setItem(storageKey, JSON.stringify(data));
-  };
-
-  return useCrudTable(rowKey, {
-    operations: {
-      getList: async (params) => {
-        const data = getStoredData();
-        const { current = 1, pageSize = 10, ...filters } = params;
-        
-        // Apply filters
-        let filteredData = data;
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            filteredData = filteredData.filter(item =>
-              String(item[key]).toLowerCase().includes(String(value).toLowerCase())
-            );
-          }
-        });
-        
-        // Apply pagination
-        const start = (current - 1) * pageSize;
-        const paginatedData = filteredData.slice(start, start + pageSize);
-        
-        return {
-          data: paginatedData,
-          total: filteredData.length,
-          success: true,
-        };
-      },
-      
-      create: async (newItem) => {
-        const data = getStoredData();
-        const maxId = Math.max(...data.map(item => Number(item[rowKey]) || 0), 0);
-        const created = { 
-          [rowKey]: maxId + 1, 
-          ...newItem,
-          createdAt: new Date().toISOString(),
-        } as T;
-        
-        data.push(created);
-        setStoredData(data);
-        return created;
-      },
-      
-      update: async (id, updateData) => {
-        const data = getStoredData();
-        const index = data.findIndex(item => item[rowKey] === id);
-        if (index === -1) throw new Error('Item not found');
-        
-        data[index] = { 
-          ...data[index], 
-          ...updateData,
-          updatedAt: new Date().toISOString(),
-        };
-        setStoredData(data);
-        return data[index];
-      },
-      
-      delete: async (id) => {
-        const data = getStoredData();
-        const filtered = data.filter(item => item[rowKey] !== id);
-        setStoredData(filtered);
-      },
-    },
-    optimisticUpdates: true,
-  });
-};
-```
-
-#### Example 3: useRealtimeCrud - WebSocket Integration
-```tsx
-export const useRealtimeCrud = <T extends Record<string, any>>(
-  rowKey: keyof T,
-  websocketUrl: string,
-  apiConfig: UseCrudTableConfig<T>['api']
-) => {
-  const config: UseCrudTableConfig<T> = {
-    api: apiConfig,
-    optimisticUpdates: false, // Disable optimistic updates for realtime
-  };
-  
-  const crud = useCrudTable(rowKey, config);
-
-  // In a real implementation, you would set up WebSocket listeners here
-  // useEffect(() => {
-  //   const ws = new WebSocket(websocketUrl);
-  //   
-  //   ws.onmessage = (event) => {
-  //     const { type, data } = JSON.parse(event.data);
-  //     switch (type) {
-  //       case 'created':
-  //       case 'updated':
-  //       case 'deleted':
-  //         crud.refresh(); // Refresh data when changes occur
-  //         break;
-  //     }
-  //   };
-  //   
-  //   return () => ws.close();
-  // }, [websocketUrl]);
-
-  return crud;
-};
-```
-
-#### Example 4: useInfiniteScrollCrud - Infinite Scrolling
-```tsx
-export const useInfiniteScrollCrud = <T extends Record<string, any>>(
-  rowKey: keyof T,
-  baseConfig: UseCrudTableConfig<T>
-) => {
-  // This would extend the base hook with infinite scroll capabilities
-  // Implementation would handle cursor-based pagination, data accumulation, etc.
-  
-  const config: UseCrudTableConfig<T> = {
-    ...baseConfig,
-    // Add infinite scroll specific configuration
-  };
-  
-  return useCrudTable(rowKey, config);
-};
-```
-
-#### Example 5: useCachedCrud - Advanced Caching
-```tsx
-export const useCachedCrud = <T extends Record<string, any>>(
-  rowKey: keyof T,
-  cacheKey: string,
-  baseConfig: UseCrudTableConfig<T>
-) => {
-  const config: UseCrudTableConfig<T> = {
-    ...baseConfig,
-    enableCache: true,
-    // In a real implementation, you might integrate with:
-    // - React Query
-    // - SWR  
-    // - Redux Toolkit Query
-    // - Apollo Client
-    // etc.
-  };
-  
-  return useCrudTable(rowKey, config);
-};
-};
-```
-
-#### Usage Examples
-```tsx
-// Using the specialized hooks
-const UserTable = () => {
-  const userCrud = useUserCrud();
-  
-  return (
-    <CrudTable
-      title="Users" 
-      rowKey="id"
-      hookConfig={userCrud}
-      columns={userColumns}
-    />
-  );
-};
-
-const OfflineTable = () => {
-  const offlineCrud = useLocalStorageCrud<User>('users-cache', 'id', mockUsers);
-  
-  return (
-    <CrudTable
-      title="Offline Users" 
-      rowKey="id"
-      hookConfig={offlineCrud}
-      columns={userColumns}
-    />
-  );
-};
-
-const RealtimeTable = () => {
-  const realtimeCrud = useRealtimeCrud<User>(
-    'id',
-    'wss://api.example.com/ws',
-    { baseUrl: '/api/users' }
-  );
-  
-  return (
-    <CrudTable
-      title="Realtime Users" 
-      rowKey="id"
-      hookConfig={realtimeCrud}
-      columns={userColumns}
-    />
-  );
-};
-```
-
----
-
-## 🏆 Complete Feature Set
-
-### Core Features
-- 🎨 **Multiple Column Types**: `string`, `number`, `boolean`, `date`, `enum`, `custom`
-- ✅ **Integrated Create/Edit Modal Forms** with validation
-- 🚀 **ProTable Integration**: Sorting, pagination & filtering built-in
-- 🔁 **Real-time Data Operations** with loading states
-- 🧠 **Custom Transform & Render Logic** per field
-- 📆 **Smart Date/Time Handling** with `date-fns` + `dayjs`
-- 🧰 **Full TypeScript Support** with generics
-- 🔐 **Field-Level Edit Controls** 
-- 🧼 **Professional UI** with row differentiation
-- 🪝 **Hook-Based Architecture** with `useCrudTable`
-- 🔌 **Multiple Data Sources**: Static, API, or custom operations
-- ⚡ **Built-in State Management**: Loading, error states, optimistic updates
-- 🔧 **Extensible Design**: Create custom hooks for your domain
-- 📊 **Performance Optimized**: Caching, lazy loading, optimistic updates
-- 🎛️ **Bulk Operations**: Select and delete multiple rows
-- 🎯 **Custom Actions**: Add your own row-level actions
-- 🔍 **Advanced Search**: Configurable column-level search
-- ✨ **Enhanced Validation**: Complex form validation rules
-
----
-
-## API Reference
-
-### CrudTable Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `title` | `string` | Table header title |
-| `rowKey` | `keyof T` | Unique identifier for each row |
-| `columns` | `CrudColumn<T>[]` | Column definitions with enhanced features |
-| `hookConfig` | `UseCrudTableConfig<T>` | Hook configuration for data operations |
-| `defaultPageSize?` | `number` | Initial page size (default: 10) |
-| `enableBulkOperations?` | `boolean` | Enable bulk select/delete (default: false) |
-| `customActions?` | `(record, actions) => ReactNode[]` | Custom row actions |
-
-### CrudColumn<T>
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `dataIndex` | `keyof T` | Field key in your data |
-| `title` | `string` | Column header text |
-| `fieldType` | `FieldType` | See the field type table below (default: `"string"`) |
-| `fieldEditable?` | `boolean` | Whether field can be edited (default: true) |
-| `searchable?` | `boolean` | Whether field appears in search (default: true) |
-| `enumOptions?` | `Record<string, {text: string, color?: string}>` | Options for enum fields |
-| `customRender?` | `(value, record) => ReactNode` | Custom display renderer |
-| `formConfig?` | `FormConfig` | Form field configuration |
-
-### Field Types
-
-| `fieldType` | Stored as | Table cell | Form control |
-|-------------|-----------|------------|--------------|
-| `string` (default) | `string` | text | `Input` |
-| `textarea` | `string` | ellipsised text | `Input.TextArea` |
-| `email` | `string` | `mailto:` link (validated) | `Input` |
-| `url` | `string` | link (validated) | `Input` |
-| `password` | `string` | masked, excluded from search | `Input.Password` |
-| `number` | `number` | localized number | `InputNumber` |
-| `money` | `number` | currency (via ProTable intl) | `InputNumber` |
-| `percent` | `number` | percentage | `InputNumber` 0–100 |
-| `rating` | `number` | stars | `Rate` |
-| `progress` | `number` | progress bar | `InputNumber` 0–100 |
-| `date` | ISO string | `YYYY-MM-DD HH:mm` | `DatePicker` |
-| `time` | `HH:mm:ss` string | time | `TimePicker` |
-| `dateRange` | `[startISO, endISO]` | `start ~ end` | `RangePicker` |
-| `boolean` | `boolean` | Yes/No tag | `Switch` |
-| `enum` | `string` | colored tag | `Select` |
-| `tags` | `string[]` | tag list | `Select mode="tags"` |
-| `image` | URL string | 48px preview | `Input` (URL, validated) |
-| `color` | hex string | swatch + code | `ColorPicker` |
-| `json` | object | inline code | validated `Input.TextArea` |
-| `custom` | anything | `customRender` | `formConfig.component` |
-
-Every field type is one entry in the exported `fieldRegistry` (`lib/fields/registry.tsx`), declaring its cell render, form control, implied validation rules and record↔form value conversion in one place.
-
-### FormConfig
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `required?` | `boolean` | Whether field is required |
-| `rules?` | `FormRule[]` | Ant Design validation rules |
-| `component?` | `ReactNode` | Custom form component |
-| `transform?` | `(value) => any` | Transform value before saving |
-
-### UseCrudTableConfig<T>
-
-Choose one approach:
-
-```tsx
-// Static data approach
-{
-  staticData: T[];
-  optimisticUpdates?: boolean;
-}
-
-// API approach  
-{
-  api: {
-    baseUrl: string;
-    endpoints?: {...};
-    headers?: Record<string, string>;
-    transform?: {...};
-  };
-}
-
-// Custom operations approach
-{
-  operations: {
-    getList: (params) => Promise<{data: T[], total: number}>;
-    create: (data: Partial<T>) => Promise<T>;
-    update: (id, data: Partial<T>) => Promise<T>;
-    delete: (id) => Promise<void>;
-  };
-}
-```
-
----
-
-## 📁 Styling
-
-Customize row striping using `.row-differentiator` in `CrudTable.css`:
-
-```css
-.row-differentiator {
-  background-color: #fafafa;
-}
-```
-
----
-
-## 📌 Notes
-
-- Date fields are handled via `dayjs` (already required by antd) in both the form and display.
-- All requests are async with error handling via `antd`'s `message` API.
-- Add your own export logic or additional toolbar buttons as needed.
-
----
-
-## 🎨 Column Type Examples
-
-### String Field
-```tsx
-{
-  dataIndex: 'name',
-  title: 'Full Name',
-  fieldType: 'string',
-  formConfig: {
-    required: true,
-    rules: [
-      { min: 2, message: 'Name must be at least 2 characters' }
-    ]
-  },
-}
-```
-
-### Number Field
-```tsx
-{
-  dataIndex: 'age',
-  title: 'Age',
-  fieldType: 'number',
-  formConfig: {
-    rules: [
-      { type: 'number', min: 0, max: 120, message: 'Invalid age' }
-    ]
-  },
-}
-```
-
-### Date Field
-```tsx
-{
-  dataIndex: 'createdAt',
-  title: 'Created Date',
-  fieldType: 'date',
-  searchable: false, // Exclude from search
-}
-```
-
-### Boolean Field  
-```tsx
-{
-  dataIndex: 'isActive',
-  title: 'Active Status',
-  fieldType: 'boolean',
-}
-```
-
-### Enum Field
-```tsx
-{
-  dataIndex: 'status',
-  title: 'Status',
-  fieldType: 'enum',
-  enumOptions: {
-    active: { text: 'Active', color: 'green' },
-    pending: { text: 'Pending', color: 'orange' },
-    inactive: { text: 'Inactive', color: 'red' },
-  },
-}
-```
-
-### Custom Field
-```tsx
-{
-  dataIndex: 'customField',
-  title: 'Custom Display',
-  fieldType: 'custom',
-  customRender: (value, record) => (
-    <div>
-      <Avatar src={record.avatar} />
-      <span>{record.name}</span>
-    </div>
-  ),
-  formConfig: {
-    component: <MyCustomInput />,
-  },
-}
-```
-
----
-
-## 🧪 Testing
-
-The hook-based architecture enables easy testing:
-
-```tsx
-import { renderHook, act } from '@testing-library/react';
-import { useCrudTable } from 'antd-crud-table';
-
-test('should handle CRUD operations', async () => {
-  const mockData = [
-    { id: 1, name: 'John', age: 30 }
-  ];
-
-  const { result } = renderHook(() => 
-    useCrudTable('id', {
-      staticData: mockData,
-    })
-  );
-
-  await act(async () => {
-    const created = await result.current.create({ 
-      name: 'Jane', 
-      age: 25 
-    });
-    expect(created).toBeTruthy();
-  });
-
-  expect(result.current.state.data).toHaveLength(2);
-});
-```
-
----
-
-## 🚀 Performance Tips
-
-### 1. **Use Static Data for Prototyping**
-```tsx
-// Perfect for demos and development
-hookConfig={{ staticData: mockData }}
-```
-
-### 2. **Enable Optimistic Updates**
-```tsx
-// For better UX with reliable backends
-hookConfig={{ 
-  api: {...},
-  optimisticUpdates: true 
-}}
-```
-
-### 3. **Implement Proper Caching**
-```tsx
-// Custom hook with caching
-const useUserCrud = () => {
-  return useCrudTable('id', {
-    enableCache: true,
-    // ... other config
-  });
-};
-```
-
-### 4. **Lazy Load Components**
-```tsx
-import { CrudTableLazy } from 'antd-crud-table';
-// Component will be loaded when needed
-```
-
----
-
-## 🔮 Roadmap
-
-### Coming Soon
-- 🌐 **WebSocket Integration**: Real-time updates
-- 📊 **Virtual Scrolling**: Handle thousands of rows
-- 📤 **Export Functionality**: CSV, JSON and Excel export, covering the whole
-  filtered result set rather than the visible page.
-  Excel output is Excel 2003 SpreadsheetML in a `.xls` file, not OOXML — Excel
-  2016+ shows a format/extension mismatch prompt on open. Use CSV to avoid it.
-- 🎨 **Theme Support**: Multiple UI themes
-- 🔍 **Advanced Filters**: Complex filtering UI
-- 📱 **Mobile Optimization**: Better mobile experience
-
-### Community Requests
-- 🔧 **Plugin System**: Extensible architecture
-- 📈 **Analytics Integration**: Built-in tracking
-- 🌍 **i18n Support**: Multi-language support
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
-
-### Development Setup
-```bash
-git clone https://github.com/maifeeulasad/antd-crud-table
-cd antd-crud-table
-npm install
-npm run dev
-```
-
----
-
-## 📄 License
-
-MIT License - feel free to use in personal and commercial projects.
-
----
-
-🎉 Build elegant CRUD interfaces faster than ever with `antd-crud-table`!
-
-
----
-
-## References
-
- - NPM: https://www.npmjs.com/package/antd-crud-table/
- - GitHub: https://github.com/maifeeulasad/antd-crud-table/
- - GitHub page (Live Demo): https://maifeeulasad.github.io/antd-crud-table/
+[MIT](./LICENSE) © [Maifee Ul Asad](https://github.com/maifeeulasad)
