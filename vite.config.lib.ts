@@ -42,6 +42,11 @@ export default defineConfig({
     rollupOptions: {
       external: isExternal,
       output: {
+        // The barrel intentionally re-exports CrudTable as default so
+        // `import CrudTable from 'antd-crud-table'` keeps working alongside
+        // the named exports. Stating this stops rollup guessing the export
+        // mode and warning about the mix.
+        exports: 'named',
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',

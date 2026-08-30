@@ -38,4 +38,3 @@ export const useLocalStorageCrud = <T extends object, K extends keyof T>(
   return actions;
 };
 
-export default useLocalStorageCrud;
