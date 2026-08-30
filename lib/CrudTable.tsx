@@ -2,268 +2,369 @@ import { PlusOutlined, EllipsisOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable, ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import { Button, Dropdown, message, Modal, Form } from 'antd';
-import { useRef, useState } from 'react';
+import type { FormRule } from 'antd';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { SortOrder } from 'antd/es/table/interface';
 
 import './CrudTable.css';
-import { useCrudTable, type UseCrudTableConfig, type CrudTableActions } from './hooks/useCrudTable';
-import { getFieldDefinition, type FieldType } from './fields/registry';
-import { exportData, type ExportFormat } from './utils/exportData';
+import { useCrudTable, toError } from './hooks/useCrudTable';
+import type { CrudTableActions, UseCrudTableOptions } from './hooks/useCrudTable';
+import { getFieldDefinition } from './fields/registry';
+import type { FieldType } from './fields/registry';
+import type { EnumOption, FieldColumn } from './fields/types';
+import type { CrudFilters, CrudQuery, CrudSort } from './core';
+import { exportData } from './utils/exportData';
+import type { ExportFormat } from './utils/exportData';
 
-type DataType = Record<string, any>;
-
-interface CrudColumn<T extends DataType> extends ProColumns<T> {
+/**
+ * A column bound to one property of `T`.
+ *
+ * `K` ties `dataIndex` to a real key, so `customRender` and `transform`
+ * receive that property's type rather than a widened one.
+ */
+export interface CrudColumnFor<T, K extends keyof T>
+  extends Omit<ProColumns<T>, 'dataIndex' | 'title' | 'render'> {
+  dataIndex: K;
+  /** Also used as the form label, so a plain string rather than a ReactNode. */
+  title: string;
   fieldType?: FieldType;
-  enumOptions?: Record<string, { text: string; [key: string]: any }>;
-  customRender?: (value: any, record: T) => React.ReactNode;
+  enumOptions?: Record<string, EnumOption>;
+  customRender?: (value: T[K], record: T) => React.ReactNode;
   formConfig?: {
     required?: boolean;
     component?: React.ReactNode;
-    transform?: (value: any) => any;
-    rules?: any[];
+    transform?: (value: T[K]) => T[K];
+    rules?: FormRule[];
   };
+  /** Editable in the create/edit form. Defaults to true. */
   fieldEditable?: boolean;
+  /** Exposed in the search form. Defaults to true. */
   searchable?: boolean;
 }
 
-interface CrudTableConfig<T extends DataType> {
-  columns: CrudColumn<T>[];
-  rowKey: keyof T;
+/**
+ * A column for any one key of `T` - the type an array of columns holds.
+ *
+ * Distributing over `keyof T` is what keeps each column's callbacks bound to
+ * its own property type. A single `CrudColumnFor<T, keyof T>` would widen
+ * `customRender` and `transform` to accept a union of every property type,
+ * losing exactly the precision this exists for.
+ */
+export type CrudColumn<T> = { [K in keyof T]-?: CrudColumnFor<T, K> }[keyof T];
+
+export interface CrudTableConfig<T extends object, K extends keyof T> {
+  columns: readonly CrudColumn<T>[];
+  rowKey: K;
   title: string;
   defaultPageSize?: number;
-  
-  // Hook configuration - choose one approach
-  hookConfig: UseCrudTableConfig<T>;
-  
-  // Additional UI configuration
+
+  /** Selects and configures the data strategy. */
+  hookConfig: UseCrudTableOptions<T, K>;
+
   enableBulkOperations?: boolean;
+  /** Show ProTable's column visibility and density controls. Defaults to true. */
   enableColumnSettings?: boolean;
   enableExport?: boolean;
-  customActions?: (record: T, actions: CrudTableActions<T>) => React.ReactNode[];
+  customActions?: (record: T, actions: CrudTableActions<T, K>) => React.ReactNode[];
 }
 
-const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
-  const { columns, rowKey, title, defaultPageSize = 10, hookConfig, enableBulkOperations = false, enableExport = true, customActions } = config;
-  
-    // Use the new hook
-  const crudActions = useCrudTable(rowKey, {
+/** ProTable hands search values back as an untyped bag; this is that bag. */
+type RequestParams = Record<string, string | number | boolean | undefined> & {
+  current?: number;
+  pageSize?: number;
+};
+
+/**
+ * Translate ProTable's request arguments into a typed CrudQuery.
+ *
+ * Column filters and search values are merged rather than one silently
+ * overwriting the other: previously `params` was spread last, so a column that
+ * was both filterable and searchable lost its filter without a trace.
+ * Filters win where both carry a value for the same key, being the more
+ * specific of the two.
+ */
+const toCrudQuery = <T extends object>(
+  params: RequestParams,
+  sort: Record<string, SortOrder>,
+  filter: Record<string, (string | number | boolean)[] | null>,
+  known: ReadonlySet<PropertyKey>,
+): CrudQuery<T> => {
+  const { current = 1, pageSize = 10, ...search } = params;
+
+  const filters: Record<string, string | number | boolean> = {};
+
+  for (const [field, value] of Object.entries(search)) {
+    // Only keys that map to a declared column reach the data source; ProTable
+    // adds bookkeeping entries that are not part of the record shape.
+    if (known.has(field) && value !== undefined && value !== '') {
+      filters[field] = value;
+    }
+  }
+
+  for (const [field, values] of Object.entries(filter)) {
+    if (values && values.length > 0 && known.has(field)) {
+      filters[field] = values[0];
+    }
+  }
+
+  const sorters: CrudSort<T>[] = Object.entries(sort)
+    .filter(([, order]) => order === 'ascend' || order === 'descend')
+    .map(([field, order]) => ({ field: field as keyof T, direction: order as 'ascend' | 'descend' }));
+
+  return {
+    page: current,
+    pageSize,
+    sort: sorters,
+    filters: filters as CrudFilters<T>,
+  };
+};
+
+const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<T, K>) => {
+  const {
+    columns,
+    rowKey,
+    title,
+    defaultPageSize = 10,
+    hookConfig,
+    enableBulkOperations = false,
+    enableColumnSettings = true,
+    enableExport = true,
+    customActions,
+  } = config;
+
+  const crud = useCrudTable<T, K>(rowKey, {
     defaultPageSize,
-    ...hookConfig
+    ...hookConfig,
+    // The table renders from ProTable's own request pipeline and reloads
+    // through actionRef. Letting the hook also re-read would issue two list
+    // requests for every write.
+    refreshAfterMutation: false,
   });
-  
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState<Partial<T> | null>(null);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<T | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
-  // What the table currently shows (the latest request response), for export
-  const visibleDataRef = useRef<T[]>([]);
 
-  // Enhanced columns: base props + whatever the field-type registry adds
-  const enhancedColumns: ProColumns<T>[] = columns.map((col) => {
-    const baseColumn: ProColumns<T> = {
-      ...col,
-      dataIndex: col.dataIndex as string,
+  /** The rows currently displayed, captured for export. */
+  const visibleRows = useRef<readonly T[]>([]);
+
+  const knownFields = useMemo(
+    () => new Set<PropertyKey>(columns.map((col) => col.dataIndex)),
+    [columns],
+  );
+
+  /** Registry lookups need the structural shape, not the generic one. */
+  const asFieldColumn = useCallback(
+    (col: CrudColumn<T>): FieldColumn => ({
+      dataIndex: col.dataIndex,
       title: col.title,
-      search: col.searchable !== false, // Default to searchable
-    };
+      fieldType: col.fieldType,
+      enumOptions: col.enumOptions,
+      customRender: col.customRender as FieldColumn['customRender'],
+    }),
+    [],
+  );
 
-    const definition = getFieldDefinition(col.fieldType);
-    return {
-      ...baseColumn,
-      ...(definition.column?.(col) as Partial<ProColumns<T>> | undefined),
-    };
-  });
-
-  // Add actions column
-  enhancedColumns.push({
-    title: 'Actions',
-    valueType: 'option',
-    width: 200,
-    render: (_, record: T) => {
-      const defaultActions = [
-        <Button 
-          key="edit" 
-          type="link" 
-          size="small"
-          onClick={() => openModal(record)}
-        >
-          Edit
-        </Button>,
-        <Button 
-          key="delete" 
-          type="link" 
-          size="small"
-          danger 
-          onClick={() => handleDelete(record[rowKey])}
-        >
-          Delete
-        </Button>,
-      ];
-
-      const custom = customActions?.(record, crudActions) || [];
-      return [...defaultActions, ...custom];
-    },
-  });
-
-  const handleRequest = async (
-    params: Record<string, any>,
-    sort: Record<string, SortOrder>,
-    filter: Record<string, any>,
-  ) => {
-    try {
-      const query = {
-        current: params.current,
-        pageSize: params.pageSize,
-        sortBy: Object.keys(sort)[0],
-        sortOrder: Object.values(sort)[0] ?? undefined,
-        ...filter,
-        ...params, // Include search parameters
-      };
-      
-      // The hook handles the actual data fetching
-      const { operations } = crudActions;
-      if (operations.getList) {
-        const response = await operations.getList(query);
-        visibleDataRef.current = response.data ?? [];
-        return {
-          data: response.data,
-          success: true,
-          total: response.total
-        };
+  const openModal = useCallback(
+    (record?: T) => {
+      setEditing(record ?? null);
+      if (!record) {
+        form.resetFields();
+        setModalOpen(true);
+        return;
       }
 
-      // Fallback to current state
-      visibleDataRef.current = crudActions.state.data;
-      return {
-        data: crudActions.state.data,
-        success: true,
-        total: crudActions.state.total
-      };
-    } catch {
-      message.error('Failed to fetch data');
-      return { data: [], success: false, total: 0 };
-    }
-  };
-
-  const openModal = (record?: Partial<T>) => {
-    setCurrentRecord(record || null);
-    if (record) {
-      const values: Record<string, any> = { ...record };
-      columns.forEach((col) => {
+      const values = { ...record } as Record<string, unknown>;
+      for (const col of columns) {
         const field = col.dataIndex as string;
-        const toFormValue = getFieldDefinition(col.fieldType).toFormValue;
+        const { toFormValue } = getFieldDefinition(col.fieldType);
         if (toFormValue && values[field] !== undefined) {
           try {
             values[field] = toFormValue(values[field]);
           } catch {
-            // Keep original value if conversion fails
+            // A value the control cannot represent is left as stored rather
+            // than blanking the field and inviting an accidental overwrite.
           }
         }
-      });
+      }
       form.setFieldsValue(values);
-    } else {
-      form.resetFields();
+      setModalOpen(true);
+    },
+    [columns, form],
+  );
+
+  const handleDelete = useCallback(
+    (id: T[K]) => {
+      Modal.confirm({
+        title: 'Are you sure?',
+        content: 'This action cannot be undone.',
+        okText: 'Yes, Delete',
+        okType: 'danger',
+        cancelText: 'Cancel',
+        onOk: async () => {
+          if (await crud.remove(id)) crud.actionRef.current?.reload();
+        },
+      });
+    },
+    [crud],
+  );
+
+  const enhancedColumns = useMemo<ProColumns<T>[]>(() => {
+    const mapped = columns.map((col) => {
+      const structural = asFieldColumn(col);
+      const definition = getFieldDefinition(col.fieldType);
+      const base: ProColumns<T> = {
+        ...(col as ProColumns<T>),
+        dataIndex: col.dataIndex as string,
+        title: col.title,
+        search: col.searchable !== false,
+      };
+      return { ...base, ...(definition.column?.(structural) as Partial<ProColumns<T>>) };
+    });
+
+    mapped.push({
+      title: 'Actions',
+      valueType: 'option',
+      width: 200,
+      render: (_, record: T) => [
+        <Button key="edit" type="link" size="small" onClick={() => openModal(record)}>
+          Edit
+        </Button>,
+        <Button
+          key="delete"
+          type="link"
+          size="small"
+          danger
+          onClick={() => handleDelete(record[rowKey])}
+        >
+          Delete
+        </Button>,
+        ...(customActions?.(record, crud) ?? []),
+      ],
+    });
+
+    return mapped;
+  }, [columns, asFieldColumn, openModal, handleDelete, rowKey, customActions, crud]);
+
+  const handleRequest = async (
+    params: RequestParams,
+    sort: Record<string, SortOrder>,
+    filter: Record<string, (string | number | boolean)[] | null>,
+  ) => {
+    try {
+      const page = await crud.dataSource.list(toCrudQuery<T>(params, sort, filter, knownFields));
+      visibleRows.current = page.items;
+      return { data: [...page.items], success: true, total: page.total };
+    } catch (thrown) {
+      // The list path is where failures matter most, and it used to swallow
+      // the error entirely: onError never fired for the initial load, for
+      // pagination, for sorting or for search.
+      const error = toError(thrown);
+      hookConfig.onError?.('list', error);
+      message.error(error.message);
+      return { data: [], success: false, total: 0 };
     }
-    setModalVisible(true);
   };
 
   const handleOk = async () => {
+    let values: Record<string, unknown>;
     try {
-      const values = await form.validateFields();
-      const transformedValues = { ...values };
+      values = await form.validateFields();
+    } catch {
+      // Validation errors are already shown inline against each field.
+      return;
+    }
 
-      // Handle transformations: registry serialization first, then the
-      // column's own transform on top
-      columns.forEach((col) => {
-        const field = col.dataIndex as string;
-        const fromFormValue = getFieldDefinition(col.fieldType).fromFormValue;
-        if (fromFormValue && values[field] !== undefined) {
-          try {
-            transformedValues[field] = fromFormValue(values[field]);
-          } catch {
-            // Keep original value if serialization fails
-          }
+    const draft: Record<string, unknown> = { ...values };
+    for (const col of columns) {
+      const field = col.dataIndex as string;
+      const { fromFormValue } = getFieldDefinition(col.fieldType);
+      if (fromFormValue && values[field] !== undefined) {
+        try {
+          draft[field] = fromFormValue(values[field]);
+        } catch (thrown) {
+          hookConfig.onError?.(editing ? 'update' : 'create', toError(thrown));
+          return;
         }
-        if (col.formConfig?.transform) {
-          transformedValues[field] = col.formConfig.transform(transformedValues[field]);
-        }
-      });
-
-      if (currentRecord && currentRecord[rowKey]) {
-        await crudActions.update(currentRecord[rowKey], transformedValues);
-      } else {
-        await crudActions.create(transformedValues);
       }
+      const transform = col.formConfig?.transform as ((value: unknown) => unknown) | undefined;
+      if (transform) draft[field] = transform(draft[field]);
+    }
 
-      setModalVisible(false);
-      crudActions.actionRef.current?.reload();
-    } catch (error) {
-      console.error('Form validation failed:', error);
+    const saved = editing
+      ? await crud.update(editing[rowKey], draft as Partial<T>)
+      : await crud.create(draft as Partial<T>);
+
+    if (saved !== null) {
+      setModalOpen(false);
+      crud.actionRef.current?.reload();
     }
   };
 
-  const handleDelete = async (id: any) => {
-    Modal.confirm({
-      title: 'Are you sure?',
-      content: 'This action cannot be undone.',
-      okText: 'Yes, Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
-      onOk: async () => {
-        const success = await crudActions.delete(id);
-        if (success) {
-          crudActions.actionRef.current?.reload();
-        }
-      },
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedRowKeys.length === 0) {
+  const handleBulkDelete = () => {
+    if (selectedKeys.length === 0) {
       message.warning('Please select items to delete');
       return;
     }
 
     Modal.confirm({
-      title: `Delete ${selectedRowKeys.length} items?`,
+      title: `Delete ${selectedKeys.length} items?`,
       content: 'This action cannot be undone.',
       okText: 'Yes, Delete All',
       okType: 'danger',
       cancelText: 'Cancel',
       onOk: async () => {
-        const promises = selectedRowKeys.map(id => crudActions.delete(id));
-        await Promise.allSettled(promises);
-        setSelectedRowKeys([]);
-        crudActions.actionRef.current?.reload();
+        const outcomes = await Promise.all(
+          selectedKeys.map(async (key) => ({
+            key,
+            ok: await crud.remove(key as T[K]),
+          })),
+        );
+
+        // Previously the settled results were discarded, so a bulk delete
+        // where half the rows were rejected still cleared the selection and
+        // reported success. Failed rows stay selected so they can be retried.
+        const failed = outcomes.filter((outcome) => !outcome.ok);
+        setSelectedKeys(failed.map((outcome) => outcome.key));
+
+        if (failed.length === 0) {
+          message.success(`Deleted ${outcomes.length} items`);
+        } else {
+          message.error(
+            `Deleted ${outcomes.length - failed.length} of ${outcomes.length}. ${failed.length} failed.`,
+          );
+        }
+
+        crud.actionRef.current?.reload();
       },
     });
   };
 
   const handleExport = (format: ExportFormat) => {
-    const data = visibleDataRef.current;
-    if (data.length === 0) {
+    const rows = visibleRows.current;
+    if (rows.length === 0) {
       message.warning('Nothing to export');
       return;
     }
 
-    // Password values never leave the table masked, so skip them entirely
     const exportColumns = columns
-      .filter((col) => col.dataIndex && col.fieldType !== 'password')
+      // Passwords are masked in the table, so they must not leave in plaintext.
+      .filter((col) => col.fieldType !== 'password')
       .map((col) => ({
-        title: typeof col.title === 'string' ? col.title : String(col.dataIndex),
+        title: col.title,
         dataIndex: String(col.dataIndex),
         fieldType: col.fieldType,
         enumOptions: col.enumOptions,
       }));
 
-    const filename = title ? title.toLowerCase().replace(/\s+/g, '-') : 'export';
-    exportData({ data, columns: exportColumns, filename, format });
+    exportData({
+      data: [...rows],
+      columns: exportColumns,
+      filename: title ? title.toLowerCase().replace(/\s+/g, '-') : 'export',
+      format,
+    });
   };
-
-  const rowSelection = enableBulkOperations ? {
-    selectedRowKeys,
-    onChange: setSelectedRowKeys,
-  } : undefined;
 
   return (
     <ProConfigProvider needDeps intl={enUSIntl}>
@@ -271,49 +372,38 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
         headerTitle={title}
         rowKey={rowKey as string}
         rowClassName={(_, index) => (index % 2 === 0 ? 'row-differentiator' : '')}
-        actionRef={crudActions.actionRef}
+        actionRef={crud.actionRef}
         columns={enhancedColumns}
         request={handleRequest}
         search={{ labelWidth: 'auto' }}
-        pagination={{ 
-          pageSize: defaultPageSize,
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
-        rowSelection={rowSelection}
+        pagination={{ pageSize: defaultPageSize, showSizeChanger: true, showQuickJumper: true }}
+        rowSelection={
+          enableBulkOperations ? { selectedRowKeys: selectedKeys, onChange: setSelectedKeys } : undefined
+        }
         toolBarRender={() => [
-          <Button
-            key="add"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => openModal()}
-          >
+          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
             New
           </Button>,
-          ...(enableBulkOperations && selectedRowKeys.length > 0 ? [
-            <Button
-              key="bulk-delete"
-              danger
-              onClick={handleBulkDelete}
-            >
-              Delete Selected ({selectedRowKeys.length})
-            </Button>
-          ] : []),
+          ...(enableBulkOperations && selectedKeys.length > 0
+            ? [
+                <Button key="bulk-delete" danger onClick={handleBulkDelete}>
+                  Delete Selected ({selectedKeys.length})
+                </Button>,
+              ]
+            : []),
           <Dropdown
             key="menu"
             menu={{
               items: [
-                ...(enableExport ? [
-                  { key: 'export-csv', label: 'Export CSV', onClick: () => handleExport('csv') },
-                  { key: 'export-json', label: 'Export JSON', onClick: () => handleExport('json') },
-                  { key: 'export-excel', label: 'Export Excel', onClick: () => handleExport('xlsx') },
-                  { type: 'divider' as const },
-                ] : []),
-                {
-                  key: 'refresh',
-                  label: 'Refresh',
-                  onClick: () => crudActions.actionRef.current?.reload()
-                },
+                ...(enableExport
+                  ? [
+                      { key: 'export-csv', label: 'Export CSV', onClick: () => handleExport('csv') },
+                      { key: 'export-json', label: 'Export JSON', onClick: () => handleExport('json') },
+                      { key: 'export-excel', label: 'Export Excel', onClick: () => handleExport('xlsx') },
+                      { type: 'divider' as const },
+                    ]
+                  : []),
+                { key: 'refresh', label: 'Refresh', onClick: () => crud.actionRef.current?.reload() },
               ],
             }}
           >
@@ -323,43 +413,43 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
           </Dropdown>,
         ]}
         options={{
-          setting: { listsHeight: 400 },
+          setting: enableColumnSettings ? { listsHeight: 400 } : false,
+          density: enableColumnSettings,
           reload: true,
         }}
         dateFormatter="string"
       />
 
       <Modal
-        title={currentRecord ? 'Edit Item' : 'Create Item'}
-        open={modalVisible}
+        title={editing ? 'Edit Item' : 'Create Item'}
+        open={modalOpen}
         onOk={handleOk}
-        onCancel={() => setModalVisible(false)}
-        destroyOnClose
+        onCancel={() => setModalOpen(false)}
+        destroyOnHidden
         width={600}
       >
         <Form form={form} layout="vertical">
           {columns.map((col) => {
-            if (!col.dataIndex) return null;
             const name = col.dataIndex as string;
-            const label = col.title as string;
-            const fieldDisabled = !(col.fieldEditable ?? true);
+            const disabled = !(col.fieldEditable ?? true);
             const definition = getFieldDefinition(col.fieldType);
+            const structural = asFieldColumn(col);
 
-            const userRules = col.formConfig?.rules || (col.formConfig?.required ? [
-              { required: true, message: `${label} is required` }
-            ] : []);
-            const rules = [...(definition.rules?.(col) ?? []), ...userRules];
+            const userRules =
+              col.formConfig?.rules ??
+              (col.formConfig?.required
+                ? [{ required: true, message: `${col.title} is required` }]
+                : []);
+            const rules: FormRule[] = [...(definition.rules?.(structural) ?? []), ...userRules];
 
-            // Custom component override
-            const control = col.formConfig?.component
-              ?? definition.formControl(col, fieldDisabled);
+            const control = col.formConfig?.component ?? definition.formControl(structural, disabled);
             if (!control) return null;
 
             return (
               <Form.Item
                 key={name}
                 name={name}
-                label={label}
+                label={col.title}
                 rules={rules}
                 valuePropName={definition.valuePropName}
               >
@@ -374,4 +464,3 @@ const CrudTable = <T extends DataType>(config: CrudTableConfig<T>) => {
 };
 
 export default CrudTable;
-export type { CrudTableConfig, CrudColumn, DataType };

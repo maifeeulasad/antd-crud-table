@@ -143,7 +143,7 @@ export const exportToJSON = <T>(options: ExportOptions<T>): void => {
  * open natively from a .xls file) rather than a real OOXML .xlsx, which
  * would require a dedicated dependency such as exceljs.
  */
-export const exportToXLSX = <T extends Record<string, any>>(options: ExportOptions<T>): void => {
+export const exportToXLSX = <T extends object>(options: ExportOptions<T>): void => {
   const { data, columns, filename = 'export' } = options;
 
   // Get visible columns
@@ -213,7 +213,7 @@ ${rowsXml}
 /**
  * Export data with specified format
  */
-export const exportData = <T extends Record<string, any>>(
+export const exportData = <T extends object>(
   options: ExportOptions<T>
 ): void => {
   const { format = 'csv' } = options;
@@ -236,7 +236,7 @@ export const exportData = <T extends Record<string, any>>(
 /**
  * Export all data (including paginated data)
  */
-export const exportAllData = async <T extends Record<string, any>>(
+export const exportAllData = async <T extends object>(
   getAllData: () => Promise<T[]>,
   columns: ColumnOption[],
   filename: string = 'export',

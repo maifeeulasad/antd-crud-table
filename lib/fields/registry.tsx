@@ -1,6 +1,9 @@
 import { Input, InputNumber, Select, Switch, DatePicker, TimePicker, Tag, Rate, Progress, Image, ColorPicker, Typography } from 'antd';
 import type { ProColumns } from '@ant-design/pro-components';
+import type { FormRule } from 'antd';
 import dayjs from 'dayjs';
+
+import type { EnumOption, FieldColumn } from './types';
 
 /** Every column type CrudTable understands. */
 export type FieldType =
@@ -25,16 +28,6 @@ export type FieldType =
   | 'color'
   | 'json';
 
-/** The slice of a CrudColumn a field-type definition may look at. */
-export interface FieldColumn {
-  dataIndex?: unknown;
-  /** ProColumns allows ReactNode or a render function here, so stay loose. */
-  title?: unknown;
-  fieldType?: FieldType;
-  enumOptions?: Record<string, { text: string; [key: string]: any }>;
-  customRender?: (value: any, record: any) => React.ReactNode;
-}
-
 /**
  * A self-contained description of one field type: how it renders in the
  * table, which control edits it in the modal form, and how values are
@@ -43,21 +36,37 @@ export interface FieldColumn {
  */
 export interface FieldTypeDefinition {
   /** Extra ProColumns props merged over the base column (valueType, render, ...). */
-  column?: (col: FieldColumn) => Partial<ProColumns<any>>;
+  column?: (col: FieldColumn) => Partial<ProColumns<Record<PropertyKey, unknown>>>;
   /** The antd control used in the create/edit modal. Return null for "no form field". */
   formControl: (col: FieldColumn, disabled: boolean) => React.ReactNode | null;
   /** Convert a record value into what the form control expects. */
-  toFormValue?: (value: any) => any;
+  toFormValue?: (value: unknown) => unknown;
   /** Convert the submitted form value back into the record shape. */
-  fromFormValue?: (value: any) => any;
+  fromFormValue?: (value: unknown) => unknown;
   /** Validation rules implied by the type itself (merged before user rules). */
-  rules?: (col: FieldColumn) => any[];
+  rules?: (col: FieldColumn) => FormRule[];
   /** Form.Item valuePropName override (e.g. 'checked' for Switch). */
   valuePropName?: string;
 }
 
-const cellValue = (col: FieldColumn, record: Record<string, any>) =>
+const cellValue = (col: FieldColumn, record: Record<PropertyKey, unknown>): unknown =>
   record[col.dataIndex as string];
+
+/** True for values worth rendering; blank and nullish cells render as a dash. */
+const isPresent = (value: unknown): boolean =>
+  value !== null && value !== undefined && value !== '';
+
+/** Narrow to a display string. Nullish becomes empty rather than "null". */
+const asText = (value: unknown): string => (isPresent(value) ? String(value) : '');
+
+/** Narrow to a finite number, falling back to 0 for values that cannot be one. */
+const asNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/** Narrow to a key usable against `enumOptions`. */
+const asKey = (value: unknown): string => String(value);
 
 const DATE_TIME_DISPLAY = 'YYYY-MM-DD HH:mm';
 const DATE_DISPLAY = 'YYYY-MM-DD';
@@ -73,7 +82,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       valueType: 'digit',
       render: (_, record) => {
         const value = cellValue(col, record);
-        return typeof value === 'number' ? value.toLocaleString() : value;
+        return typeof value === 'number' ? value.toLocaleString() : asText(value);
       },
     }),
     formControl: (_col, disabled) => (
@@ -87,14 +96,14 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       render: (_, record) => {
         const value = cellValue(col, record);
         if (!value) return '-';
-        const parsed = dayjs(value);
-        return <span>{parsed.isValid() ? parsed.format(DATE_TIME_DISPLAY) : String(value)}</span>;
+        const parsed = dayjs(asText(value));
+        return <span>{parsed.isValid() ? parsed.format(DATE_TIME_DISPLAY) : asText(value)}</span>;
       },
     }),
     formControl: (_col, disabled) => (
       <DatePicker style={{ width: '100%' }} showTime disabled={disabled} />
     ),
-    toFormValue: (value) => (value ? dayjs(value) : value),
+    toFormValue: (value) => (isPresent(value) ? dayjs(asText(value)) : value),
     fromFormValue: (value) =>
       dayjs.isDayjs(value) ? value.toISOString() : value,
   },
@@ -118,14 +127,14 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       valueEnum: col.enumOptions,
       render: (_, record) => {
         const value = cellValue(col, record);
-        const option = col.enumOptions?.[value];
-        return option ? <Tag color={option.color}>{option.text}</Tag> : value;
+        const option = col.enumOptions?.[asKey(value)];
+        return option ? <Tag color={option.color}>{option.text}</Tag> : asText(value);
       },
     }),
     formControl: (col, disabled) => (
       <Select
         disabled={disabled}
-        placeholder={`Select ${String(col.title ?? '').toLowerCase()}`}
+        placeholder={`Select ${col.title.toLowerCase()}`}
         options={Object.entries(col.enumOptions || {}).map(([value, option]) => ({
           label: option.text,
           value,
@@ -136,7 +145,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 
   custom: {
     column: (col) => ({
-      render: (_, record) => col.customRender?.(cellValue(col, record), record),
+      render: (_, record) => col.customRender?.(cellValue(col, record), record) ?? null,
     }),
     // Custom columns bring their own control via formConfig.component
     // (handled before the registry lookup); otherwise they have no form field.
@@ -154,7 +163,9 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     column: (col) => ({
       render: (_, record) => {
         const value = cellValue(col, record);
-        return value ? <a href={`mailto:${value}`}>{value}</a> : '-';
+        if (!isPresent(value)) return '-';
+        const address = asText(value);
+        return <a href={`mailto:${encodeURIComponent(address)}`}>{address}</a>;
       },
     }),
     formControl: (_col, disabled) => <Input type="email" disabled={disabled} />,
@@ -165,11 +176,13 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     column: (col) => ({
       render: (_, record) => {
         const value = cellValue(col, record);
-        return value ? (
-          <a href={value} target="_blank" rel="noopener noreferrer">
-            {value}
+        if (!isPresent(value)) return '-';
+        const href = asText(value);
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer">
+            {href}
           </a>
-        ) : '-';
+        );
       },
     }),
     formControl: (_col, disabled) => <Input disabled={disabled} />,
@@ -180,7 +193,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     // Never show the value in the table, and keep it out of search by default
     column: (col) => ({
       search: false,
-      render: (_, record) => (cellValue(col, record) ? '••••••••' : '-'),
+      render: (_, record) => (isPresent(cellValue(col, record)) ? '••••••••' : '-'),
     }),
     formControl: (_col, disabled) => <Input.Password disabled={disabled} />,
   },
@@ -210,7 +223,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     column: (col) => ({
       search: false,
       render: (_, record) => (
-        <Rate disabled allowHalf value={Number(cellValue(col, record)) || 0} />
+        <Rate disabled allowHalf value={asNumber(cellValue(col, record))} />
       ),
     }),
     formControl: (_col, disabled) => <Rate allowHalf disabled={disabled} />,
@@ -220,7 +233,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     column: (col) => ({
       search: false,
       render: (_, record) => (
-        <Progress percent={Number(cellValue(col, record)) || 0} size="small" />
+        <Progress percent={asNumber(cellValue(col, record))} size="small" />
       ),
     }),
     formControl: (_col, disabled) => (
@@ -234,7 +247,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <TimePicker style={{ width: '100%' }} disabled={disabled} />
     ),
-    toFormValue: (value) => (value ? dayjs(value, TIME_VALUE) : value),
+    toFormValue: (value) => (isPresent(value) ? dayjs(asText(value), TIME_VALUE) : value),
     fromFormValue: (value) =>
       dayjs.isDayjs(value) ? value.format(TIME_VALUE) : value,
   },
@@ -246,8 +259,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       render: (_, record) => {
         const value = cellValue(col, record);
         if (!Array.isArray(value) || value.length !== 2) return '-';
-        const [start, end] = value.map((v) => dayjs(v));
-        if (!start.isValid() || !end.isValid()) return String(value);
+        const [start, end] = value.map((v) => dayjs(asText(v)));
+        if (!start.isValid() || !end.isValid()) return asText(value);
         return `${start.format(DATE_DISPLAY)} ~ ${end.format(DATE_DISPLAY)}`;
       },
     }),
@@ -255,7 +268,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       <DatePicker.RangePicker style={{ width: '100%' }} disabled={disabled} />
     ),
     toFormValue: (value) =>
-      Array.isArray(value) ? value.map((v) => (v ? dayjs(v) : v)) : value,
+      Array.isArray(value) ? value.map((v) => (isPresent(v) ? dayjs(asText(v)) : v)) : value,
     fromFormValue: (value) =>
       Array.isArray(value)
         ? value.map((v) => (dayjs.isDayjs(v) ? v.toISOString() : v))
@@ -270,8 +283,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         if (!Array.isArray(value) || value.length === 0) return '-';
         return (
           <>
-            {value.map((tag: string) => (
-              <Tag key={tag}>{tag}</Tag>
+            {value.map((tag) => (
+              <Tag key={asText(tag)}>{asText(tag)}</Tag>
             ))}
           </>
         );
@@ -288,7 +301,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       search: false,
       render: (_, record) => {
         const value = cellValue(col, record);
-        return value ? <Image src={value} width={48} height={48} style={{ objectFit: 'cover' }} /> : '-';
+        if (!isPresent(value)) return '-';
+        return <Image src={asText(value)} width={48} height={48} style={{ objectFit: 'cover' }} />;
       },
     }),
     formControl: (_col, disabled) => (
@@ -303,7 +317,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       search: false,
       render: (_, record) => {
         const value = cellValue(col, record);
-        if (!value) return '-';
+        if (!isPresent(value)) return '-';
+        const hex = asText(value);
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span
@@ -313,10 +328,10 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
                 height: 14,
                 borderRadius: 3,
                 border: '1px solid rgba(0,0,0,0.15)',
-                backgroundColor: value,
+                backgroundColor: hex,
               }}
             />
-            {value}
+            {hex}
           </span>
         );
       },
@@ -364,3 +379,5 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
 /** Look up a field type, falling back to `string` so every column gets a form control. */
 export const getFieldDefinition = (fieldType?: FieldType): FieldTypeDefinition =>
   fieldRegistry[fieldType ?? 'string'] ?? fieldRegistry.string;
+
+export type { EnumOption, FieldColumn };

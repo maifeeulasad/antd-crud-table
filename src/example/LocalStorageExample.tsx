@@ -1,7 +1,9 @@
 import './../App.css';
-import { useLocalStorageCrud } from '../../lib/hooks/useLocalStorageCrud';
-import { exportToCSV, exportToJSON } from '../../lib/utils/exportData';
+import { useMemo } from 'react';
 import { Button, Space, message } from 'antd';
+
+import { LocalStorageDataSource } from '../../lib/core';
+import { exportToCSV, exportToJSON } from '../../lib/utils/exportData';
 import CrudTableLazy from '../../lib/CrudTableLazy';
 import type { CrudColumn } from '../../lib/CrudTable';
 
@@ -88,18 +90,22 @@ const userColumns: CrudColumn<User>[] = [
   },
 ];
 
-const LocalStorageExample = () => {
-  const storageKey = 'antd-crud-demo-users';
-  const crud = useLocalStorageCrud<User>('id', storageKey, initialUsers, {
-    defaultPageSize: 5,
-    optimisticUpdates: true,
-    onSuccess: (operation, data) => {
-      console.log(`LocalStorage ${operation}:`, data);
-    },
-  });
+const storageKey = 'antd-crud-demo-users';
 
-  const handleExport = (format: 'csv' | 'json') => {
-    const data = crud.state.data;
+const LocalStorageExample = () => {
+  // One source, shared by the table and by this component's own toolbar.
+  // Previously the toolbar's hook was wired into the table through custom
+  // operations that delegated back to it, so the two fought over the same
+  // records; owning the source directly removes the round trip entirely.
+  const dataSource = useMemo(
+    () => new LocalStorageDataSource<User, 'id'>(storageKey, 'id', initialUsers),
+    [],
+  );
+
+  const handleExport = async (format: 'csv' | 'json') => {
+    // listAll ignores pagination, so the export covers every stored record
+    // rather than whichever page happens to be on screen.
+    const data = [...(await dataSource.listAll({}))];
     const columns = userColumns.map(col => ({
       title: String(col.title),
       dataIndex: String(col.dataIndex),
@@ -129,39 +135,17 @@ const LocalStorageExample = () => {
           window.location.reload();
         }} danger>Reset Data</Button>
       </Space>
-      <CrudTableLazy<User>
+      <CrudTableLazy<User, 'id'>
         title="User Management (LocalStorage)"
         rowKey="id"
         defaultPageSize={5}
         enableBulkOperations={true}
         hookConfig={{
-          operations: {
-            getList: async (params) => {
-              const data = crud.state.data;
-              const filtered = data.filter((item: User) =>
-                params.name ? item.name.toLowerCase().includes(params.name.toLowerCase()) : true
-              );
-              const start = ((params.current || 1) - 1) * (params.pageSize || 10);
-              return {
-                data: filtered.slice(start, start + (params.pageSize || 10)),
-                total: filtered.length,
-                success: true,
-              };
-            },
-            create: async (data) => {
-              const newItem = { id: Date.now(), ...data, createdAt: new Date().toISOString() } as User;
-              await crud.create(newItem);
-              return newItem;
-            },
-            update: async (id, data) => {
-              await crud.update(id, data);
-              return { id, ...data } as User;
-            },
-            delete: async (id) => {
-              await crud.delete(id);
-            },
-          },
+          dataSource,
           optimisticUpdates: true,
+          onSuccess: (operation, data) => {
+            console.log(`LocalStorage ${operation}:`, data);
+          },
         }}
         customActions={(record) => [
           <Button

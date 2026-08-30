@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'coverage'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -23,12 +23,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // A schema-driven table generic over arbitrary record shapes uses
-      // `any` at its data boundaries (row indexing, ids, antd rule and
-      // valueEnum interop), and interface-typed consumers cannot satisfy
-      // Record<string, unknown> constraints. Keep the rule visible as a
-      // warning so new accidental `any`s still surface without failing CI.
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // The public API is generic over the record type, so nothing needs
+      // `any`: ids are `T[K]`, columns bind `dataIndex` to `keyof T`, and the
+      // field registry uses `unknown` at its genuinely dynamic boundary,
+      // which forces narrowing rather than waiving it. An error, not a
+      // warning - a warning is how 49 of them accumulated.
+      '@typescript-eslint/no-explicit-any': 'error',
       // A leading underscore marks a binding that is deliberately unused.
       // Overridable base-class methods must keep their full parameter list
       // for subclass overrides to remain type-compatible, even where the

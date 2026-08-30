@@ -1,387 +1,327 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import type { ActionType } from '@ant-design/pro-components';
 
-import { applyQuery } from '../utils/query';
+import {
+  CustomDataSource,
+  LocalStorageDataSource,
+  RestDataSource,
+  StaticDataSource,
+} from '../core';
+import type {
+  CrudDataSource,
+  CrudDraft,
+  CrudQuery,
+  IdGenerator,
+  RestDataSourceOptions,
+} from '../core';
+import type { CrudOperations } from '../core/CustomDataSource';
 
-export type CrudOperation<T> = {
-  getList: (params: CrudParams) => Promise<CrudResponse<T>>;
-  create: (data: Partial<T>) => Promise<T>;
-  update: (id: any, data: Partial<T>) => Promise<T>;
-  delete: (id: any) => Promise<void>;
+/** The operations a table performs, used to tag success and error callbacks. */
+export type CrudOperationName = 'list' | 'create' | 'update' | 'delete';
+
+/**
+ * Coerce a thrown value into an Error.
+ *
+ * Callbacks receive a real Error rather than `unknown`, so consumers can read
+ * `.message` without narrowing at every call site. Non-Error throws are wrapped
+ * rather than stringified into the message, keeping the original as `cause`.
+ */
+export const toError = (thrown: unknown): Error => {
+  if (thrown instanceof Error) return thrown;
+  return new Error(typeof thrown === 'string' ? thrown : 'Unknown error', { cause: thrown });
 };
 
-export type CrudParams = {
-  current?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortOrder?: 'ascend' | 'descend';
-  [key: string]: any;
-};
-
-export type CrudResponse<T> = {
-  data: T[];
-  total: number;
-  success?: boolean;
-};
-
-export type CrudState<T> = {
+export interface CrudTableState<T> {
   loading: boolean;
-  error: string | null;
-  data: T[];
+  error: Error | null;
+  data: readonly T[];
   total: number;
-  current: number;
+  page: number;
   pageSize: number;
-};
+}
 
-type UseCrudTableConfigBase = {
-  // Configuration
+interface UseCrudTableOptionsBase<T, K extends keyof T> {
   defaultPageSize?: number;
-  enableCache?: boolean;
+
+  /**
+   * Apply mutations to local state immediately instead of re-reading.
+   *
+   * Trades consistency for responsiveness: server-assigned fields will not be
+   * reflected until the next list.
+   */
   optimisticUpdates?: boolean;
-  
-  // Callbacks
-  onSuccess?: (operation: 'create' | 'update' | 'delete' | 'fetch', data: any) => void;
-  onError?: (operation: 'create' | 'update' | 'delete' | 'fetch', error: any) => void;
+
+  /**
+   * Re-read the list after a successful mutation.
+   *
+   * Defaults to true for standalone hook consumers, which render from
+   * `state.data`. `CrudTable` sets it false: it renders from ProTable's own
+   * request pipeline and reloads through `actionRef`, so leaving this on
+   * issued two list requests for every write.
+   */
+  refreshAfterMutation?: boolean;
+
+  /** Replaces the built-in identity policy for the in-memory strategies. */
+  generateId?: IdGenerator<T, K>;
+
+  /** Show antd toasts for the outcome of each operation. */
+  notifications?: boolean;
+
+  onSuccess?: (operation: CrudOperationName, payload: unknown) => void;
+  onError?: (operation: CrudOperationName, error: Error) => void;
 }
 
-interface UseCrudTableConfigStatic<T> extends UseCrudTableConfigBase {
-  staticData: T[];
-}
-interface UseCrudTableConfigApi<T> extends UseCrudTableConfigBase {
-  api: {
-    baseUrl?: string;
-    endpoints?: {
-      list?: string;
-      create?: string;
-      update?: string;
-      delete?: string;
-    };
-    headers?: Record<string, string>;
-    transform?: {
-      request?: (data: any) => any;
-      response?: (data: any) => CrudResponse<T>;
-    };
-  };
-}
-interface UseCrudTableConfigCustom<T> extends UseCrudTableConfigBase {
-  operations: Partial<CrudOperation<T>>;
+interface StaticStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  staticData: readonly T[];
 }
 
-export type UseCrudTableConfig<T> =
-  | UseCrudTableConfigStatic<T>
-  | UseCrudTableConfigApi<T>
-  | UseCrudTableConfigCustom<T>;
+interface RestStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  api: RestDataSourceOptions<T>;
+}
 
-export type CrudTableActions<T> = {
-  // Data operations
+interface LocalStorageStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  storageKey: string;
+  initialData?: readonly T[];
+}
+
+interface OperationsStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  operations: CrudOperations<T, K>;
+}
+
+interface DataSourceStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  /** A source the consumer constructs and owns outright. */
+  dataSource: CrudDataSource<T, K>;
+}
+
+/** Exactly one strategy must be supplied. */
+export type UseCrudTableOptions<T, K extends keyof T> =
+  | StaticStrategy<T, K>
+  | RestStrategy<T, K>
+  | LocalStorageStrategy<T, K>
+  | OperationsStrategy<T, K>
+  | DataSourceStrategy<T, K>;
+
+export interface CrudTableActions<T, K extends keyof T> {
   refresh: () => Promise<void>;
-  create: (data: Partial<T>) => Promise<T | null>;
-  update: (id: any, data: Partial<T>) => Promise<T | null>;
-  delete: (id: any) => Promise<boolean>;
+  create: (draft: CrudDraft<T>) => Promise<T | null>;
+  update: (id: T[K], draft: CrudDraft<T>) => Promise<T | null>;
+  remove: (id: T[K]) => Promise<boolean>;
 
-  // Raw data-source operations, for direct wiring (e.g. ProTable's request)
-  operations: Partial<CrudOperation<T>>;
+  /** The live source, for wiring a table's own request pipeline directly. */
+  dataSource: CrudDataSource<T, K>;
 
-  // Table operations
+  setPage: (page: number) => void;
   setPageSize: (size: number) => void;
-  setCurrentPage: (page: number) => void;
 
-  // State
-  state: CrudState<T>;
-  actionRef: React.MutableRefObject<ActionType | undefined>;
+  state: CrudTableState<T>;
+  actionRef: React.RefObject<ActionType | undefined>;
+}
+
+const buildDataSource = <T extends object, K extends keyof T>(
+  rowKey: K,
+  options: UseCrudTableOptions<T, K>,
+): CrudDataSource<T, K> => {
+  if ('dataSource' in options) return options.dataSource;
+  if ('operations' in options) return new CustomDataSource<T, K>(options.operations);
+  if ('storageKey' in options) {
+    return new LocalStorageDataSource<T, K>(
+      options.storageKey,
+      rowKey,
+      options.initialData ?? [],
+      options.generateId,
+    );
+  }
+  if ('staticData' in options) {
+    return new StaticDataSource<T, K>(options.staticData, rowKey, options.generateId);
+  }
+  if ('api' in options) return new RestDataSource<T, K>(options.api);
+
+  throw new Error(
+    'useCrudTable: supply exactly one of `staticData`, `api`, `storageKey`, `operations` or `dataSource`.',
+  );
 };
 
-// Default API operations
-const createApiOperations = <T>(api: UseCrudTableConfigApi<T>['api']): CrudOperation<T> => {
-  const { baseUrl = '', endpoints = {}, headers = {}, transform } = api;
-  
-  const defaultEndpoints = {
-    list: '/list',
-    create: '/create',
-    update: '/update',
-    delete: '/delete',
-    ...endpoints,
-  };
-
-  const fetchWithConfig = async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(`${baseUrl}${url}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      ...options,
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
-  };
-
-  return {
-    getList: async (params: CrudParams) => {
-      // Only build the endpoint path + query here; fetchWithConfig is the
-      // single place that applies baseUrl, otherwise relative baseUrls
-      // (e.g. '/api') end up in the request twice.
-      const search = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          search.append(key, String(value));
-        }
-      });
-
-      const queryString = search.toString();
-      const response = await fetchWithConfig(
-        queryString ? `${defaultEndpoints.list}?${queryString}` : defaultEndpoints.list
-      );
-      return transform?.response ? transform.response(response) : response;
-    },
-    
-    create: async (data: Partial<T>) => {
-      const payload = transform?.request ? transform.request(data) : data;
-      return fetchWithConfig(defaultEndpoints.create, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-    },
-    
-    update: async (id: any, data: Partial<T>) => {
-      const payload = transform?.request ? transform.request(data) : data;
-      return fetchWithConfig(`${defaultEndpoints.update}/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
-    },
-    
-    delete: async (id: any) => {
-      await fetchWithConfig(`${defaultEndpoints.delete}/${id}`, {
-        method: 'DELETE',
-      });
-    },
-  };
-};
-
-// Static data operations
-const createStaticOperations = <T extends Record<string, any>>(staticData: T[], keyField: keyof T): CrudOperation<T> => {
-  const data = [...staticData];
-  // Math.max() over an empty spread is -Infinity, so guard the empty case
-  let nextId = data.length > 0
-    ? Math.max(...data.map(item => Number(item[keyField]) || 0)) + 1
-    : 1;
-
-  return {
-    getList: async (params: CrudParams) => applyQuery(data, params),
-    
-    create: async (newData: Partial<T>) => {
-      const item = { 
-        [keyField]: nextId++, 
-        ...newData 
-      } as T;
-      data.push(item);
-      return item;
-    },
-    
-    update: async (id: any, updateData: Partial<T>) => {
-      const index = data.findIndex(item => item[keyField] === id);
-      if (index === -1) throw new Error('Item not found');
-      
-      data[index] = { ...data[index], ...updateData };
-      return data[index];
-    },
-    
-    delete: async (id: any) => {
-      const index = data.findIndex(item => item[keyField] === id);
-      if (index === -1) throw new Error('Item not found');
-      
-      data.splice(index, 1);
-    },
-  };
-};
-
-export const useCrudTable = <T extends Record<string, any>>(
-  rowKey: keyof T,
-  config: UseCrudTableConfig<T>
-): CrudTableActions<T> => {
+/**
+ * React state and mutation orchestration over a `CrudDataSource`.
+ *
+ * All I/O lives in the source; this hook owns only React concerns. The source
+ * is constructed once per hook instance and held in a ref, so its lifetime is
+ * tied to the component rather than to the identity of the arguments that
+ * described it - passing an inline `staticData` literal no longer discards the
+ * dataset on every parent render.
+ */
+export const useCrudTable = <T extends object, K extends keyof T>(
+  rowKey: K,
+  options: UseCrudTableOptions<T, K>,
+): CrudTableActions<T, K> => {
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [state, setState] = useState<CrudState<T>>({
+
+  const {
+    defaultPageSize = 10,
+    optimisticUpdates = false,
+    refreshAfterMutation = true,
+    notifications = true,
+  } = options;
+
+  // Read through a ref so callback identity does not change every render.
+  // `options` is almost always an object literal at the call site, so
+  // depending on it directly recreated every callback on every render and
+  // defeated the memoization entirely.
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  // Constructed once. Recreating on argument identity is precisely what made
+  // in-memory datasets reset mid-session.
+  const sourceRef = useRef<CrudDataSource<T, K> | null>(null);
+  if (sourceRef.current === null) {
+    sourceRef.current = buildDataSource(rowKey, options);
+  }
+  const dataSource = sourceRef.current;
+
+  const [state, setState] = useState<CrudTableState<T>>({
     loading: false,
     error: null,
     data: [],
     total: 0,
-    current: 1,
-    pageSize: config.defaultPageSize || 10,
+    page: 1,
+    pageSize: defaultPageSize,
   });
 
-  // Create operations based on config. Memoized on the strategy inputs:
-  // static operations keep their working copy in a closure, so rebuilding
-  // them on every render would silently reset the dataset.
-  const customOperations = 'operations' in config ? config.operations : undefined;
-  const staticData = 'staticData' in config ? config.staticData : undefined;
-  const apiConfig = 'api' in config ? config.api : undefined;
+  const { page, pageSize } = state;
 
-  const operations = useMemo(() => {
-    if (customOperations) {
-      // Custom operations provided
-      return customOperations as CrudOperation<T>;
-    } else if (staticData) {
-      // Static data approach
-      return createStaticOperations(staticData, rowKey);
-    } else if (apiConfig) {
-      // API-based approach
-      return createApiOperations<T>(apiConfig);
-    } else {
-      throw new Error('useCrudTable: Must provide either staticData, api config, or custom operations');
-    }
-  }, [customOperations, staticData, apiConfig, rowKey]);
+  const report = useCallback(
+    (operation: CrudOperationName, error: Error): void => {
+      optionsRef.current.onError?.(operation, error);
+      if (notifications) message.error(error.message);
+    },
+    [notifications],
+  );
 
-  // Destructured so the deps below are plain values; a property named
-  // `state.current` would trip the ref heuristic in react-hooks lint
-  const { current: currentPage, pageSize } = state;
+  const succeed = useCallback(
+    (operation: CrudOperationName, payload: unknown, text: string): void => {
+      optionsRef.current.onSuccess?.(operation, payload);
+      if (notifications) message.success(text);
+    },
+    [notifications],
+  );
 
-  const refresh = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-
+  const refresh = useCallback(async (): Promise<void> => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const params: CrudParams = {
-        current: currentPage,
-        pageSize,
-      };
-
-      const response = await operations.getList!(params);
-
-      setState(prev => ({
+      const query: CrudQuery<T> = { page, pageSize };
+      const result = await dataSource.list(query);
+      setState((prev) => ({
         ...prev,
-        data: response.data,
-        total: response.total,
+        data: result.items,
+        total: result.total,
         loading: false,
       }));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch data';
-      setState(prev => ({ ...prev, loading: false, error: errorMessage }));
-      config.onError?.('fetch', error);
-      message.error(errorMessage);
+    } catch (thrown) {
+      const error = toError(thrown);
+      setState((prev) => ({ ...prev, loading: false, error }));
+      report('list', error);
     }
-  }, [currentPage, pageSize, operations, config]);
+  }, [dataSource, page, pageSize, report]);
 
-  const create = useCallback(async (data: Partial<T>): Promise<T | null> => {
-    if (!operations.create) {
-      message.error('Create operation not supported');
-      return null;
-    }
+  /**
+   * Post-mutation reconciliation.
+   *
+   * Exactly one of these happens, never both - applying the optimistic update
+   * *and* re-reading is what produced two list requests per write.
+   */
+  const reconcile = useCallback(
+    async (apply: (prev: CrudTableState<T>) => CrudTableState<T>): Promise<void> => {
+      if (optimisticUpdates) {
+        setState(apply);
+        return;
+      }
+      if (refreshAfterMutation) {
+        await refresh();
+        return;
+      }
+      setState((prev) => ({ ...prev, loading: false }));
+    },
+    [optimisticUpdates, refreshAfterMutation, refresh],
+  );
 
-    try {
-      setState(prev => ({ ...prev, loading: true }));
-      const result = await operations.create(data);
-      
-      if (config.optimisticUpdates) {
-        setState(prev => ({
+  const create = useCallback(
+    async (draft: CrudDraft<T>): Promise<T | null> => {
+      setState((prev) => ({ ...prev, loading: true }));
+      try {
+        const created = await dataSource.create(draft);
+        await reconcile((prev) => ({
           ...prev,
-          data: [...prev.data, result],
+          data: [...prev.data, created],
           total: prev.total + 1,
           loading: false,
         }));
-      } else {
-        await refresh();
+        succeed('create', created, 'Created successfully');
+        return created;
+      } catch (thrown) {
+        setState((prev) => ({ ...prev, loading: false }));
+        report('create', toError(thrown));
+        return null;
       }
-      
-      config.onSuccess?.('create', result);
-      message.success('Created successfully');
-      return result;
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false }));
-      const errorMessage = error instanceof Error ? error.message : 'Create failed';
-      config.onError?.('create', error);
-      message.error(errorMessage);
-      return null;
-    }
-  }, [operations, config, refresh]);
+    },
+    [dataSource, reconcile, report, succeed],
+  );
 
-  const update = useCallback(async (id: any, data: Partial<T>): Promise<T | null> => {
-    if (!operations.update) {
-      message.error('Update operation not supported');
-      return null;
-    }
-
-    try {
-      setState(prev => ({ ...prev, loading: true }));
-      const result = await operations.update(id, data);
-      
-      if (config.optimisticUpdates) {
-        setState(prev => ({
+  const update = useCallback(
+    async (id: T[K], draft: CrudDraft<T>): Promise<T | null> => {
+      setState((prev) => ({ ...prev, loading: true }));
+      try {
+        const updated = await dataSource.update(id, draft);
+        await reconcile((prev) => ({
           ...prev,
-          data: prev.data.map(item => 
-            item[rowKey] === id ? { ...item, ...result } : item
-          ),
+          data: prev.data.map((item) => (item[rowKey] === id ? updated : item)),
           loading: false,
         }));
-      } else {
-        await refresh();
+        succeed('update', updated, 'Updated successfully');
+        return updated;
+      } catch (thrown) {
+        setState((prev) => ({ ...prev, loading: false }));
+        report('update', toError(thrown));
+        return null;
       }
-      
-      config.onSuccess?.('update', result);
-      message.success('Updated successfully');
-      return result;
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false }));
-      const errorMessage = error instanceof Error ? error.message : 'Update failed';
-      config.onError?.('update', error);
-      message.error(errorMessage);
-      return null;
-    }
-  }, [operations, config, rowKey, refresh]);
+    },
+    [dataSource, reconcile, report, rowKey, succeed],
+  );
 
-  const deleteItem = useCallback(async (id: any): Promise<boolean> => {
-    if (!operations.delete) {
-      message.error('Delete operation not supported');
-      return false;
-    }
-
-    try {
-      setState(prev => ({ ...prev, loading: true }));
-      await operations.delete(id);
-      
-      if (config.optimisticUpdates) {
-        setState(prev => ({
+  const remove = useCallback(
+    async (id: T[K]): Promise<boolean> => {
+      setState((prev) => ({ ...prev, loading: true }));
+      try {
+        await dataSource.remove(id);
+        await reconcile((prev) => ({
           ...prev,
-          data: prev.data.filter(item => item[rowKey] !== id),
-          total: prev.total - 1,
+          data: prev.data.filter((item) => item[rowKey] !== id),
+          total: Math.max(0, prev.total - 1),
           loading: false,
         }));
-      } else {
-        await refresh();
+        succeed('delete', id, 'Deleted successfully');
+        return true;
+      } catch (thrown) {
+        setState((prev) => ({ ...prev, loading: false }));
+        report('delete', toError(thrown));
+        return false;
       }
-      
-      config.onSuccess?.('delete', id);
-      message.success('Deleted successfully');
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false }));
-      const errorMessage = error instanceof Error ? error.message : 'Delete failed';
-      config.onError?.('delete', error);
-      message.error(errorMessage);
-      return false;
-    }
-  }, [operations, config, rowKey, refresh]);
+    },
+    [dataSource, reconcile, report, rowKey, succeed],
+  );
+
+  const setPage = useCallback((next: number) => {
+    setState((prev) => ({ ...prev, page: next }));
+  }, []);
 
   const setPageSize = useCallback((size: number) => {
-    setState(prev => ({ ...prev, pageSize: size, current: 1 }));
+    setState((prev) => ({ ...prev, pageSize: size, page: 1 }));
   }, []);
 
-  const setCurrentPage = useCallback((page: number) => {
-    setState(prev => ({ ...prev, current: page }));
-  }, []);
-
-  return {
-    refresh,
-    create,
-    update,
-    delete: deleteItem,
-    operations,
-    setPageSize,
-    setCurrentPage,
-    state,
-    actionRef,
-  };
+  return useMemo(
+    () => ({ refresh, create, update, remove, dataSource, setPage, setPageSize, state, actionRef }),
+    [refresh, create, update, remove, dataSource, setPage, setPageSize, state],
+  );
 };
+
+export default useCrudTable;

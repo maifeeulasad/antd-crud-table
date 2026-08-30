@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
-import { useCrudTable } from './useCrudTable';
+import { useCrudTable, toError } from './useCrudTable';
+import { StaticDataSource } from '../core';
+import type { CrudDataSource, CrudPage, CrudQuery } from '../core';
 
 interface User {
   id: number;
@@ -9,126 +11,254 @@ interface User {
   age: number;
 }
 
-const seed = (): User[] => [
+const seed: User[] = [
   { id: 1, name: 'Alice', age: 30 },
   { id: 2, name: 'Bob', age: 25 },
 ];
 
-describe('useCrudTable (static data)', () => {
-  it('loads data through refresh', async () => {
-    const data = seed();
-    const { result } = renderHook(() => useCrudTable<User>('id', { staticData: data }));
+vi.mock('antd', async () => {
+  const actual = await vi.importActual<typeof import('antd')>('antd');
+  return {
+    ...actual,
+    message: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+  };
+});
 
-    await act(async () => {
-      await result.current.refresh();
-    });
+/** A source that records every call, for asserting request counts. */
+const countingSource = (): CrudDataSource<User, 'id'> & { calls: Record<string, number> } => {
+  const inner = new StaticDataSource<User, 'id'>(seed, 'id');
+  const calls = { list: 0, create: 0, update: 0, remove: 0 };
+  return {
+    calls,
+    list: async (query: CrudQuery<User>): Promise<CrudPage<User>> => {
+      calls.list += 1;
+      return inner.list(query);
+    },
+    create: async (draft) => {
+      calls.create += 1;
+      return inner.create(draft);
+    },
+    update: async (id, draft) => {
+      calls.update += 1;
+      return inner.update(id, draft);
+    },
+    remove: async (id) => {
+      calls.remove += 1;
+      return inner.remove(id);
+    },
+  };
+};
 
+beforeEach(() => vi.clearAllMocks());
+
+describe('useCrudTable strategy selection', () => {
+  it('builds a static source from staticData', async () => {
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { staticData: seed }));
+
+    await act(async () => { await result.current.refresh(); });
+
+    expect(result.current.state.total).toBe(2);
     expect(result.current.state.data).toHaveLength(2);
-    expect(result.current.state.total).toBe(2);
-    expect(result.current.state.loading).toBe(false);
   });
 
-  it('creates, updates and deletes against the same working copy', async () => {
-    // staticData must be referentially stable, as in real usage where it
-    // lives outside the render (a module const, memo, state, ...)
-    const data = seed();
-    const { result } = renderHook(() => useCrudTable<User>('id', { staticData: data }));
+  it('accepts a consumer-owned data source', async () => {
+    const dataSource = new StaticDataSource<User, 'id'>(seed, 'id');
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { dataSource }));
 
-    await act(async () => {
-      const created = await result.current.create({ name: 'Carol', age: 28 });
-      expect(created).toMatchObject({ id: 3, name: 'Carol' });
-    });
-
-    await act(async () => {
-      const updated = await result.current.update(3, { age: 29 });
-      expect(updated).toMatchObject({ id: 3, age: 29 });
-    });
-
-    await act(async () => {
-      expect(await result.current.delete(1)).toBe(true);
-      await result.current.refresh();
-    });
-
-    expect(result.current.state.total).toBe(2);
-    expect(result.current.state.data.map(u => u.id)).toEqual([2, 3]);
+    expect(result.current.dataSource).toBe(dataSource);
   });
 
-  it('starts ids at 1 when the dataset is empty', async () => {
-    const { result } = renderHook(() => useCrudTable<User>('id', { staticData: [] }));
-
-    await act(async () => {
-      const created = await result.current.create({ name: 'First', age: 1 });
-      expect(created?.id).toBe(1);
-    });
-  });
-
-  it('keeps the operations reference stable across re-renders', () => {
-    const data = seed();
-    const { result, rerender } = renderHook(() => useCrudTable<User>('id', { staticData: data }));
-
-    const first = result.current.operations;
-    rerender();
-    expect(result.current.operations).toBe(first);
-  });
-
-  it('survives a re-render without losing mutations', async () => {
-    const data = seed();
-    const { result, rerender } = renderHook(() => useCrudTable<User>('id', { staticData: data }));
-
-    await act(async () => {
-      await result.current.create({ name: 'Carol', age: 28 });
-    });
-
-    rerender();
-
-    await act(async () => {
-      await result.current.refresh();
-    });
-
-    expect(result.current.state.total).toBe(3);
+  it('reports a missing strategy instead of failing later', () => {
+    // React logs the render failure; the throw is the point of the test.
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() =>
+      renderHook(() =>
+        // @ts-expect-error deliberately omitting every strategy
+        useCrudTable<User, 'id'>('id', {}),
+      ),
+    ).toThrow(/supply exactly one of/);
+    consoleError.mockRestore();
   });
 });
 
-describe('useCrudTable (custom operations)', () => {
-  it('delegates to the provided operations and fires callbacks', async () => {
-    const onSuccess = vi.fn();
-    const operations = {
-      getList: vi.fn(async () => ({ data: seed(), total: 2 })),
-      create: vi.fn(async (input: Partial<User>) => ({ id: 99, ...input } as User)),
-    };
-
+describe('useCrudTable mutations', () => {
+  it('creates and reflects the new record', async () => {
     const { result } = renderHook(() =>
-      useCrudTable<User>('id', { operations, onSuccess })
+      useCrudTable<User, 'id'>('id', { staticData: seed }),
     );
 
-    await act(async () => {
-      const created = await result.current.create({ name: 'Zed', age: 1 });
-      expect(created?.id).toBe(99);
-    });
+    await act(async () => { await result.current.create({ name: 'Carol', age: 22 }); });
 
-    expect(operations.create).toHaveBeenCalledOnce();
-    expect(onSuccess).toHaveBeenCalledWith('create', expect.objectContaining({ id: 99 }));
+    expect(result.current.state.total).toBe(3);
   });
 
-  it('reports failures through onError and returns null', async () => {
-    const onError = vi.fn();
-    const operations = {
-      getList: vi.fn(async () => ({ data: [] as User[], total: 0 })),
-      create: vi.fn(async () => {
-        throw new Error('nope');
-      }),
-    };
+  it('passes the typed id through to update', async () => {
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { staticData: seed }));
 
+    let updated: User | null = null;
+    await act(async () => { updated = await result.current.update(1, { name: 'Alicia' }); });
+
+    expect(updated).toMatchObject({ id: 1, name: 'Alicia', age: 30 });
+  });
+
+  it('removes and reports success', async () => {
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { staticData: seed }));
+
+    let ok = false;
+    await act(async () => { ok = await result.current.remove(1); });
+
+    expect(ok).toBe(true);
+  });
+
+  it('returns null and reports the error when a mutation fails', async () => {
+    const onError = vi.fn();
     const { result } = renderHook(() =>
-      useCrudTable<User>('id', { operations, onError })
+      useCrudTable<User, 'id'>('id', { staticData: seed, onError }),
     );
 
-    await act(async () => {
-      const created = await result.current.create({ name: 'Zed', age: 1 });
-      expect(created).toBeNull();
-    });
+    let created: User | null = { id: 0, name: '', age: 0 };
+    await act(async () => { created = await result.current.update(404, { name: 'x' }); });
 
-    expect(onError).toHaveBeenCalledWith('create', expect.any(Error));
-    expect(result.current.state.loading).toBe(false);
+    expect(created).toBeNull();
+    expect(onError).toHaveBeenCalledWith('update', expect.any(Error));
+  });
+});
+
+// The regression that motivated splitting refresh from reload: the hook
+// re-read the list *and* the table reloaded through actionRef, so every write
+// cost two list requests.
+describe('useCrudTable request counts', () => {
+  it('issues exactly one list per mutation when refreshAfterMutation is off', async () => {
+    const dataSource = countingSource();
+    const { result } = renderHook(() =>
+      useCrudTable<User, 'id'>('id', { dataSource, refreshAfterMutation: false }),
+    );
+
+    await act(async () => { await result.current.create({ name: 'Carol', age: 22 }); });
+
+    expect(dataSource.calls.create).toBe(1);
+    expect(dataSource.calls.list).toBe(0);
+  });
+
+  it('re-reads once when refreshAfterMutation is on', async () => {
+    const dataSource = countingSource();
+    const { result } = renderHook(() =>
+      useCrudTable<User, 'id'>('id', { dataSource, refreshAfterMutation: true }),
+    );
+
+    await act(async () => { await result.current.create({ name: 'Carol', age: 22 }); });
+
+    expect(dataSource.calls.list).toBe(1);
+  });
+
+  it('never re-reads when updating optimistically', async () => {
+    const dataSource = countingSource();
+    const { result } = renderHook(() =>
+      useCrudTable<User, 'id'>('id', { dataSource, optimisticUpdates: true }),
+    );
+
+    await act(async () => { await result.current.create({ name: 'Carol', age: 22 }); });
+
+    expect(dataSource.calls.list).toBe(0);
+    expect(result.current.state.total).toBe(1);
+  });
+});
+
+describe('useCrudTable stability', () => {
+  // The hook config is an object literal at almost every call site. Depending
+  // on it directly recreated every callback on every render, so the
+  // memoization existed but achieved nothing.
+  it('keeps action identities stable across re-renders with an inline config', () => {
+    const { result, rerender } = renderHook(() =>
+      useCrudTable<User, 'id'>('id', { staticData: seed, onSuccess: () => {} }),
+    );
+
+    const first = {
+      create: result.current.create,
+      update: result.current.update,
+      remove: result.current.remove,
+      dataSource: result.current.dataSource,
+    };
+
+    rerender();
+
+    expect(result.current.create).toBe(first.create);
+    expect(result.current.update).toBe(first.update);
+    expect(result.current.remove).toBe(first.remove);
+    expect(result.current.dataSource).toBe(first.dataSource);
+  });
+
+  // Previously the working copy lived in a closure keyed on the caller's array
+  // identity, so an inline literal discarded every created row on re-render.
+  it('preserves mutations when staticData is an inline literal', async () => {
+    const { result, rerender } = renderHook(() =>
+      useCrudTable<User, 'id'>('id', { staticData: [{ id: 1, name: 'Alice', age: 30 }] }),
+    );
+
+    await act(async () => { await result.current.create({ name: 'Added', age: 1 }); });
+    rerender();
+    await act(async () => { await result.current.refresh(); });
+
+    expect(result.current.state.total).toBe(2);
+  });
+
+  it('reads the latest callbacks without rebuilding the actions', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ onSuccess }) => useCrudTable<User, 'id'>('id', { staticData: seed, onSuccess }),
+      { initialProps: { onSuccess: first } },
+    );
+
+    rerender({ onSuccess: second });
+    await act(async () => { await result.current.create({ name: 'Carol', age: 22 }); });
+
+    expect(second).toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled();
+  });
+});
+
+describe('useCrudTable paging', () => {
+  it('resets to the first page when the page size changes', () => {
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { staticData: seed }));
+
+    act(() => result.current.setPage(3));
+    expect(result.current.state.page).toBe(3);
+
+    act(() => result.current.setPageSize(50));
+    expect(result.current.state.pageSize).toBe(50);
+    expect(result.current.state.page).toBe(1);
+  });
+
+  it('surfaces a list failure as state.error', async () => {
+    const dataSource: CrudDataSource<User, 'id'> = {
+      list: async () => { throw new Error('backend down'); },
+      create: async () => seed[0],
+      update: async () => seed[0],
+      remove: async () => undefined,
+    };
+    const { result } = renderHook(() => useCrudTable<User, 'id'>('id', { dataSource }));
+
+    await act(async () => { await result.current.refresh(); });
+
+    await waitFor(() => expect(result.current.state.error?.message).toBe('backend down'));
+  });
+});
+
+describe('toError', () => {
+  it('passes an Error through unchanged', () => {
+    const original = new Error('boom');
+    expect(toError(original)).toBe(original);
+  });
+
+  it('wraps a thrown string as the message', () => {
+    expect(toError('plain failure').message).toBe('plain failure');
+  });
+
+  it('keeps a non-string throw as the cause rather than stringifying it', () => {
+    const thrown = { status: 500 };
+    const error = toError(thrown);
+    expect(error.message).toBe('Unknown error');
+    expect(error.cause).toBe(thrown);
   });
 });

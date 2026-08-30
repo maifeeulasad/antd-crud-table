@@ -81,7 +81,7 @@ const FieldTypesShowcase = () => (
       Every extended field type in one table: textarea, url, email, money, percent,
       rating, progress, time, dateRange, tags, image, color and json.
     </p>
-    <CrudTableLazy<Product>
+    <CrudTableLazy<Product, 'id'>
       title="Product Catalog (All Field Types)"
       rowKey="id"
       defaultPageSize={5}
