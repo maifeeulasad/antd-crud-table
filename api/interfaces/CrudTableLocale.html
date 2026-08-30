@@ -23,7 +23,7 @@ needs supplying to override the library's own wording.</p>
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">CrudTableLocale</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#actions">actions</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#bulkdeletepartial">bulkDeletePartial</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">succeeded</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">total</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">failed</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#bulkdeletesuccess">bulkDeleteSuccess</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#cancel">cancel</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#confirmbulkdeleteok">confirmBulkDeleteOk</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#confirmbulkdeletetitle">confirmBulkDeleteTitle</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#confirmdeletecontent">confirmDeleteContent</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#confirmdeleteok">confirmDeleteOk</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#confirmdeletetitle">confirmDeleteTitle</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#create">create</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#createsuccess">createSuccess</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#createtitle">createTitle</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#delete">delete</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#deleteselected">deleteSelected</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#deletesuccess">deleteSuccess</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#edit">edit</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#edittitle">editTitle</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#empty">empty</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#exportall">exportAll</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">format</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#exportfailed">exportFailed</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#exportpage">exportPage</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">format</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#invalidemail">invalidEmail</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#invalidimageurl">invalidImageUrl</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#invalidjson">invalidJson</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#invalidurl">invalidUrl</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#loading">loading</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#no">no</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#nothingtoexport">nothingToExport</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#ok">ok</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#refresh">refresh</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#requiredfield">requiredField</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">label</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#selectitemstodelete">selectItemsToDelete</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#selectplaceholder">selectPlaceholder</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">title</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#tagsplaceholder">tagsPlaceholder</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#updatesuccess">updateSuccess</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#yes">yes</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L14">lib/locale/types.ts:14</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L14">lib/locale/types.ts:14</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -77,252 +77,252 @@ needs supplying to override the library's own wording.</p>
 <div class="tsd-comment tsd-typography"><p>Header of the per-row actions column.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L16">lib/locale/types.ts:16</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L16">lib/locale/types.ts:16</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="bulkdeletepartial"><span>bulk<wbr/>Delete<wbr/>Partial</span><a href="#bulkdeletepartial" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">bulkDeletePartial</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">succeeded</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">total</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">failed</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Result message when only some deletes in a bulk run succeeded.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L54">lib/locale/types.ts:54</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L54">lib/locale/types.ts:54</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="bulkdeletesuccess"><span>bulk<wbr/>Delete<wbr/>Success</span><a href="#bulkdeletesuccess" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">bulkDeleteSuccess</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Result message when every delete in a bulk run succeeded.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L52">lib/locale/types.ts:52</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L52">lib/locale/types.ts:52</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="cancel"><span>cancel</span><a href="#cancel" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">cancel</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Dismiss button in the create/edit form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L33">lib/locale/types.ts:33</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L33">lib/locale/types.ts:33</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="confirmbulkdeleteok"><span>confirm<wbr/>Bulk<wbr/>Delete<wbr/>Ok</span><a href="#confirmbulkdeleteok" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">confirmBulkDeleteOk</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirm button of the bulk-delete confirmation.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L46">lib/locale/types.ts:46</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L46">lib/locale/types.ts:46</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="confirmbulkdeletetitle"><span>confirm<wbr/>Bulk<wbr/>Delete<wbr/>Title</span><a href="#confirmbulkdeletetitle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">confirmBulkDeleteTitle</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Title of the bulk-delete confirmation.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L44">lib/locale/types.ts:44</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L44">lib/locale/types.ts:44</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="confirmdeletecontent"><span>confirm<wbr/>Delete<wbr/>Content</span><a href="#confirmdeletecontent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">confirmDeleteContent</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Body of both delete confirmations.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L40">lib/locale/types.ts:40</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L40">lib/locale/types.ts:40</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="confirmdeleteok"><span>confirm<wbr/>Delete<wbr/>Ok</span><a href="#confirmdeleteok" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">confirmDeleteOk</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirm button of the single-delete confirmation.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L42">lib/locale/types.ts:42</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L42">lib/locale/types.ts:42</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="confirmdeletetitle"><span>confirm<wbr/>Delete<wbr/>Title</span><a href="#confirmdeletetitle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">confirmDeleteTitle</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Title of the single-delete confirmation.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L38">lib/locale/types.ts:38</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L38">lib/locale/types.ts:38</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="create"><span>create</span><a href="#create" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">create</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Toolbar button opening the create form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L22">lib/locale/types.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L22">lib/locale/types.ts:22</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="createsuccess"><span>create<wbr/>Success</span><a href="#createsuccess" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">createSuccess</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirmation that a record was created.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L66">lib/locale/types.ts:66</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L66">lib/locale/types.ts:66</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="createtitle"><span>create<wbr/>Title</span><a href="#createtitle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">createTitle</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Title of the create form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L27">lib/locale/types.ts:27</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L27">lib/locale/types.ts:27</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="delete"><span>delete</span><a href="#delete" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">delete</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Row action deleting a record.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L20">lib/locale/types.ts:20</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L20">lib/locale/types.ts:20</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="deleteselected"><span>delete<wbr/>Selected</span><a href="#deleteselected" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">deleteSelected</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">count</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Toolbar button opening the bulk-delete confirmation.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L48">lib/locale/types.ts:48</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L48">lib/locale/types.ts:48</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="deletesuccess"><span>delete<wbr/>Success</span><a href="#deletesuccess" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">deleteSuccess</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirmation that a record was deleted.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L70">lib/locale/types.ts:70</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L70">lib/locale/types.ts:70</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="edit"><span>edit</span><a href="#edit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">edit</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Row action opening the edit form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L18">lib/locale/types.ts:18</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L18">lib/locale/types.ts:18</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="edittitle"><span>edit<wbr/>Title</span><a href="#edittitle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">editTitle</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Title of the edit form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L29">lib/locale/types.ts:29</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L29">lib/locale/types.ts:29</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="empty"><span>empty</span><a href="#empty" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">empty</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Cell text for a missing value.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L80">lib/locale/types.ts:80</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L80">lib/locale/types.ts:80</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="exportall"><span>export<wbr/>All</span><a href="#exportall" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">exportAll</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">format</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Menu entry writing every matching record.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L57">lib/locale/types.ts:57</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L57">lib/locale/types.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="exportfailed"><span>export<wbr/>Failed</span><a href="#exportfailed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">exportFailed</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Error shown when gathering or writing the export failed.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L63">lib/locale/types.ts:63</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L63">lib/locale/types.ts:63</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="exportpage"><span>export<wbr/>Page</span><a href="#exportpage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">exportPage</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">format</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Menu entry writing only the rows on screen.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L59">lib/locale/types.ts:59</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L59">lib/locale/types.ts:59</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="invalidemail"><span>invalid<wbr/>Email</span><a href="#invalidemail" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">invalidEmail</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Validation message for an <code>email</code> column.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L86">lib/locale/types.ts:86</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L86">lib/locale/types.ts:86</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="invalidimageurl"><span>invalid<wbr/>Image<wbr/>Url</span><a href="#invalidimageurl" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">invalidImageUrl</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Validation message for an <code>image</code> column.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L90">lib/locale/types.ts:90</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L90">lib/locale/types.ts:90</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="invalidjson"><span>invalid<wbr/>Json</span><a href="#invalidjson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">invalidJson</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Validation message for a <code>json</code> column.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L92">lib/locale/types.ts:92</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L92">lib/locale/types.ts:92</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="invalidurl"><span>invalid<wbr/>Url</span><a href="#invalidurl" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">invalidUrl</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Validation message for a <code>url</code> column.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L88">lib/locale/types.ts:88</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L88">lib/locale/types.ts:88</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="loading"><span>loading</span><a href="#loading" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">loading</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Placeholder while the code-split table loads.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L73">lib/locale/types.ts:73</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L73">lib/locale/types.ts:73</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="no"><span>no</span><a href="#no" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">no</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Cell text for a false boolean.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L78">lib/locale/types.ts:78</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L78">lib/locale/types.ts:78</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="nothingtoexport"><span>nothing<wbr/>To<wbr/>Export</span><a href="#nothingtoexport" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">nothingToExport</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Warning shown when there is nothing to write.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L61">lib/locale/types.ts:61</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L61">lib/locale/types.ts:61</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="ok"><span>ok</span><a href="#ok" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirm button in the create/edit form.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L31">lib/locale/types.ts:31</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L31">lib/locale/types.ts:31</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="refresh"><span>refresh</span><a href="#refresh" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">refresh</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Toolbar menu entry re-reading the current page.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L24">lib/locale/types.ts:24</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L24">lib/locale/types.ts:24</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="requiredfield"><span>required<wbr/>Field</span><a href="#requiredfield" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">requiredField</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">label</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Validation message for a required field.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L35">lib/locale/types.ts:35</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L35">lib/locale/types.ts:35</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="selectitemstodelete"><span>select<wbr/>Items<wbr/>To<wbr/>Delete</span><a href="#selectitemstodelete" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">selectItemsToDelete</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Warning shown when bulk delete is invoked with nothing selected.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L50">lib/locale/types.ts:50</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L50">lib/locale/types.ts:50</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="selectplaceholder"><span>select<wbr/>Placeholder</span><a href="#selectplaceholder" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">selectPlaceholder</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">title</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Placeholder of an enum column's select control.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L82">lib/locale/types.ts:82</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L82">lib/locale/types.ts:82</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="tagsplaceholder"><span>tags<wbr/>Placeholder</span><a href="#tagsplaceholder" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">tagsPlaceholder</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Placeholder of a tags column's input.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L84">lib/locale/types.ts:84</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L84">lib/locale/types.ts:84</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="updatesuccess"><span>update<wbr/>Success</span><a href="#updatesuccess" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">updateSuccess</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Confirmation that a record was updated.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L68">lib/locale/types.ts:68</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L68">lib/locale/types.ts:68</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="yes"><span>yes</span><a href="#yes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">yes</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Cell text for a true boolean.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/8f280116168acf2c816741cb7f19ae2dcbd49a5c/lib/locale/types.ts#L76">lib/locale/types.ts:76</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/maifeeulasad/antd-crud-table/blob/87708323c273fe1cc624e137a574f23f09f50d77/lib/locale/types.ts#L76">lib/locale/types.ts:76</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
