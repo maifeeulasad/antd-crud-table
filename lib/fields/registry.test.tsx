@@ -245,3 +245,63 @@ describe('column configuration', () => {
     expect(getFieldDefinition('time').column?.(column())?.valueType).toBe('time');
   });
 });
+
+// #32: React 18 warns about a javascript: href but still renders it, so a
+// stored value could become a click-to-execute link.
+describe('link scheme safety', () => {
+  const DANGEROUS = [
+    'javascript:alert(1)',
+    'JavaScript:alert(1)',
+    '  javascript:alert(1)',
+    'java\tscript:alert(1)',
+    'java\nscript:alert(1)',
+    'vbscript:msgbox(1)',
+    'data:text/html,<script>alert(1)</script>',
+  ];
+
+  const linkIn = (node: ReactNode): HTMLElement | null => {
+    const { container } = render(<>{node}</>);
+    return container.querySelector('a');
+  };
+
+  it.each(DANGEROUS)('url renders %j as inert text, not a link', (payload) => {
+    expect(linkIn(renderCell('url', payload))).toBeNull();
+  });
+
+  it.each(DANGEROUS)('email renders %j as inert text, not a link', (payload) => {
+    expect(linkIn(renderCell('email', payload))).toBeNull();
+  });
+
+  it('still shows the value so nothing silently disappears', () => {
+    expect(textOf(renderCell('url', 'javascript:alert(1)'))).toBe('javascript:alert(1)');
+  });
+
+  it.each([
+    'https://example.test/x',
+    'http://example.test/x',
+    '/relative/path',
+    'relative/path',
+    '?query=1',
+    '#fragment',
+  ])('url keeps %j clickable', (payload) => {
+    expect(linkIn(renderCell('url', payload))).not.toBeNull();
+  });
+
+  it('email keeps an ordinary address clickable', () => {
+    const link = linkIn(renderCell('email', 'a@b.test'));
+    expect(link?.getAttribute('href')).toBe('mailto:a%40b.test');
+  });
+
+  it('image rejects a script-bearing source but allows raster data urls', () => {
+    const rendered = (payload: string) => {
+      const { container } = render(<>{renderCell('image', payload)}</>);
+      return container.querySelector('img');
+    };
+
+    expect(rendered('javascript:alert(1)')).toBeNull();
+    // SVG can execute script when rendered, so it is not treated as raster.
+    expect(rendered('data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')).toBeNull();
+    expect(rendered('https://example.test/a.png')).not.toBeNull();
+    expect(rendered('data:image/png;base64,iVBORw0KGgo=')).not.toBeNull();
+  });
+});

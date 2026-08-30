@@ -68,6 +68,49 @@ const asNumber = (value: unknown): number => {
 /** Narrow to a key usable against `enumOptions`. */
 const asKey = (value: unknown): string => String(value);
 
+/**
+ * Schemes safe to place in an `href` or `src`.
+ *
+ * `javascript:` is the reason this exists - React 18 warns about such an href
+ * but still renders it, so a stored value could become a click-to-execute
+ * link. `data:` is excluded for anchors (a data URL can carry HTML) and for
+ * images is allowed only for raster types, since `image/svg+xml` can execute
+ * script when rendered.
+ */
+const LINK_SCHEMES = ['http', 'https'] as const;
+const MAIL_SCHEMES = ['http', 'https', 'mailto'] as const;
+
+const SCHEME_PREFIX = /^([a-z][a-z0-9+.-]*):/i;
+const RASTER_DATA_URL = /^data:image\/(png|jpe?g|gif|webp|avif|bmp|x-icon)[;,]/i;
+
+/**
+ * Whether a value is safe to use as a link or image target.
+ *
+ * A value with no scheme is relative and therefore safe. A value with a scheme
+ * must name one on the allowlist. Whitespace and control characters are
+ * stripped before the check because browsers ignore them inside URLs, so
+ * `java\tscript:alert(1)` navigates exactly as `javascript:alert(1)` does.
+ */
+const hasSafeScheme = (value: string, allowed: readonly string[]): boolean => {
+  // Matching control characters is the entire point: browsers strip them from
+  // URLs, so they must be stripped here too or they hide the scheme.
+  // eslint-disable-next-line no-control-regex
+  const normalised = value.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+  const match = SCHEME_PREFIX.exec(normalised);
+  if (!match) return true;
+  return allowed.includes(match[1].toLowerCase());
+};
+
+/** Whether an image source is safe: an allowed scheme, or a raster data URL. */
+const isSafeImageSource = (value: string): boolean => {
+  // Matching control characters is the entire point: browsers strip them from
+  // URLs, so they must be stripped here too or they hide the scheme.
+  // eslint-disable-next-line no-control-regex
+  const normalised = value.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+  if (RASTER_DATA_URL.test(normalised)) return true;
+  return hasSafeScheme(value, LINK_SCHEMES);
+};
+
 const DATE_TIME_DISPLAY = 'YYYY-MM-DD HH:mm';
 const DATE_DISPLAY = 'YYYY-MM-DD';
 const TIME_VALUE = 'HH:mm:ss';
@@ -165,6 +208,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         const value = cellValue(col, record);
         if (!isPresent(value)) return '-';
         const address = asText(value);
+        if (!hasSafeScheme(address, MAIL_SCHEMES)) return <span>{address}</span>;
         return <a href={`mailto:${encodeURIComponent(address)}`}>{address}</a>;
       },
     }),
@@ -178,6 +222,9 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         const value = cellValue(col, record);
         if (!isPresent(value)) return '-';
         const href = asText(value);
+        // An unsafe scheme renders as inert text: the value is still visible,
+        // it simply is not clickable.
+        if (!hasSafeScheme(href, LINK_SCHEMES)) return <span>{href}</span>;
         return (
           <a href={href} target="_blank" rel="noopener noreferrer">
             {href}
@@ -302,7 +349,9 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       render: (_, record) => {
         const value = cellValue(col, record);
         if (!isPresent(value)) return '-';
-        return <Image src={asText(value)} width={48} height={48} style={{ objectFit: 'cover' }} />;
+        const src = asText(value);
+        if (!isSafeImageSource(src)) return <span>{src}</span>;
+        return <Image src={src} width={48} height={48} style={{ objectFit: 'cover' }} />;
       },
     }),
     formControl: (_col, disabled) => (
