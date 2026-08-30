@@ -26,7 +26,7 @@
     "build:demo": "tsc -b && vite build",
     "build:lib": "tsc --p ./tsconfig.build.json && vite build --config vite.config.lib.ts",
     "docs:api": "typedoc",
-    "build:storybook": "STORYBOOK_BASE=/storybook/ storybook build -o dist-site/storybook",
+    "build:storybook": "STORYBOOK_BASE=\"${SITE_BASE:-/antd-crud-table/}storybook/\" storybook build -o dist-site/storybook",
     "build:site": "pnpm build:demo && pnpm docs:api && pnpm build:storybook",
     "storybook": "storybook dev -p 6006",
     "lint": "eslint .",
