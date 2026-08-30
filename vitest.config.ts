@@ -20,10 +20,10 @@ export default defineConfig({
       // time coverage was introduced. Raise them as suites land (#29) so a
       // regression fails the run; never lower them to make a build pass.
       thresholds: {
-        statements: 42,
-        branches: 34,
-        functions: 31,
-        lines: 42,
+        statements: 56,
+        branches: 48,
+        functions: 46,
+        lines: 55,
       },
     },
   },
