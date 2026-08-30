@@ -65,6 +65,12 @@ export interface CrudTableConfig<T extends object, K extends keyof T> {
   /** Show ProTable's column visibility and density controls. Defaults to true. */
   enableColumnSettings?: boolean;
   enableExport?: boolean;
+  /**
+   * Whether export covers the whole filtered result set or just the rows on
+   * screen. Defaults to `'all'`, falling back to `'page'` when the data source
+   * cannot list without pagination.
+   */
+  exportScope?: 'all' | 'page';
   customActions?: (record: T, actions: CrudTableActions<T, K>) => React.ReactNode[];
 }
 
@@ -129,6 +135,7 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     enableBulkOperations = false,
     enableColumnSettings = true,
     enableExport = true,
+    exportScope = 'all',
     customActions,
   } = config;
 
@@ -146,8 +153,10 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
 
-  /** The rows currently displayed, captured for export. */
+  /** The rows currently displayed, and the query that produced them. */
   const visibleRows = useRef<readonly T[]>([]);
+  const lastQuery = useRef<CrudQuery<T>>({ page: 1, pageSize: defaultPageSize });
+  const [exporting, setExporting] = useState(false);
 
   const knownFields = useMemo(
     () => new Set<PropertyKey>(columns.map((col) => col.dataIndex)),
@@ -253,7 +262,9 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     filter: Record<string, (string | number | boolean)[] | null>,
   ) => {
     try {
-      const page = await crud.dataSource.list(toCrudQuery<T>(params, sort, filter, knownFields));
+      const query = toCrudQuery<T>(params, sort, filter, knownFields);
+      lastQuery.current = query;
+      const page = await crud.dataSource.list(query);
       visibleRows.current = page.items;
       return { data: [...page.items], success: true, total: page.total };
     } catch (thrown) {
@@ -341,30 +352,59 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     });
   };
 
-  const handleExport = (format: ExportFormat) => {
-    const rows = visibleRows.current;
-    if (rows.length === 0) {
-      message.warning('Nothing to export');
-      return;
+  /**
+   * Whether the whole result set can be exported.
+   *
+   * `listAll` is optional on the interface: a source over an unbounded remote
+   * collection has no safe way to honour it, so the menu degrades to the
+   * visible page and says so rather than silently exporting ten of a thousand
+   * rows under a label implying everything.
+   */
+  const canExportAll = exportScope === 'all' && typeof crud.dataSource.listAll === 'function';
+
+  const handleExport = async (format: ExportFormat) => {
+    setExporting(true);
+    try {
+      const rows = canExportAll
+        ? await crud.dataSource.listAll!({
+            sort: lastQuery.current.sort,
+            filters: lastQuery.current.filters,
+          })
+        : visibleRows.current;
+
+      if (rows.length === 0) {
+        message.warning('Nothing to export');
+        return;
+      }
+
+      const exportColumns = columns
+        // Passwords are masked in the table, so they must not leave in plaintext.
+        .filter((col) => col.fieldType !== 'password')
+        .map((col) => ({
+          title: col.title,
+          dataIndex: String(col.dataIndex),
+          fieldType: col.fieldType,
+          enumOptions: col.enumOptions,
+        }));
+
+      exportData({
+        data: [...rows],
+        columns: exportColumns,
+        filename: title ? title.toLowerCase().replace(/\s+/g, '-') : 'export',
+        format,
+      });
+    } catch (thrown) {
+      const error = toError(thrown);
+      hookConfig.onError?.('list', error);
+      message.error(`Export failed: ${error.message}`);
+    } finally {
+      setExporting(false);
     }
-
-    const exportColumns = columns
-      // Passwords are masked in the table, so they must not leave in plaintext.
-      .filter((col) => col.fieldType !== 'password')
-      .map((col) => ({
-        title: col.title,
-        dataIndex: String(col.dataIndex),
-        fieldType: col.fieldType,
-        enumOptions: col.enumOptions,
-      }));
-
-    exportData({
-      data: [...rows],
-      columns: exportColumns,
-      filename: title ? title.toLowerCase().replace(/\s+/g, '-') : 'export',
-      format,
-    });
   };
+
+  // The label states the scope outright: "Export CSV" on page 3 of 500 writing
+  // ten rows was correct-looking and wrong.
+  const exportLabel = canExportAll ? 'Export all' : 'Export page';
 
   return (
     <ProConfigProvider needDeps intl={enUSIntl}>
@@ -397,9 +437,24 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
               items: [
                 ...(enableExport
                   ? [
-                      { key: 'export-csv', label: 'Export CSV', onClick: () => handleExport('csv') },
-                      { key: 'export-json', label: 'Export JSON', onClick: () => handleExport('json') },
-                      { key: 'export-excel', label: 'Export Excel', onClick: () => handleExport('xlsx') },
+                      {
+                        key: 'export-csv',
+                        label: `${exportLabel} as CSV`,
+                        disabled: exporting,
+                        onClick: () => void handleExport('csv'),
+                      },
+                      {
+                        key: 'export-json',
+                        label: `${exportLabel} as JSON`,
+                        disabled: exporting,
+                        onClick: () => void handleExport('json'),
+                      },
+                      {
+                        key: 'export-excel',
+                        label: `${exportLabel} as Excel`,
+                        disabled: exporting,
+                        onClick: () => void handleExport('xlsx'),
+                      },
                       { type: 'divider' as const },
                     ]
                   : []),

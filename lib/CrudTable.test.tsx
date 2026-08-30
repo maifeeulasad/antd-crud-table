@@ -135,7 +135,7 @@ describe('CrudTable toolbar flags', () => {
     await user.hover(screen.getByRole('button', { name: 'ellipsis' }));
 
     expect(await screen.findByText('Refresh')).toBeDefined();
-    expect(screen.queryByText('Export CSV')).toBeNull();
+    expect(screen.queryByText(/^Export/)).toBeNull();
   });
 
   it('offers export entries when export is enabled', async () => {
@@ -145,8 +145,8 @@ describe('CrudTable toolbar flags', () => {
 
     await user.hover(screen.getByRole('button', { name: 'ellipsis' }));
 
-    expect(await screen.findByText('Export CSV')).toBeDefined();
-    expect(screen.getByText('Export JSON')).toBeDefined();
+    expect(await screen.findByText('Export all as CSV')).toBeDefined();
+    expect(screen.getByText('Export all as JSON')).toBeDefined();
   });
 });
 
@@ -459,5 +459,105 @@ describe('CrudTable single delete', () => {
     await user.click(await confirmButton(/Yes, Delete/));
 
     await waitFor(() => expect(remove).toHaveBeenCalledWith(1));
+  });
+});
+
+// #28: export read from the visible page, so "Export CSV" on page 3 of 500
+// wrote ten rows under a label implying everything.
+describe('CrudTable export scope', () => {
+  const many: User[] = Array.from({ length: 25 }, (_, i) => ({
+    id: i + 1,
+    name: `User ${i + 1}`,
+    age: 20 + i,
+    status: i % 2 === 0 ? 'active' : 'inactive',
+  }));
+
+  const openExportMenu = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.hover(screen.getByRole('button', { name: 'ellipsis' }));
+  };
+
+  it('exports every matching row, not just the visible page', async () => {
+    const user = userEvent.setup();
+    const source = new StaticDataSource<User, 'id'>(many, 'id');
+    const listAll = vi.spyOn(source, 'listAll');
+
+    renderTable({ hookConfig: { dataSource: source }, defaultPageSize: 5 });
+    await screen.findByText('User 1');
+
+    await openExportMenu(user);
+    await user.click(await screen.findByText('Export all as JSON'));
+
+    await waitFor(() => expect(listAll).toHaveBeenCalled());
+  });
+
+  it('labels the menu with the scope it will actually export', async () => {
+    const user = userEvent.setup();
+    renderTable({
+      hookConfig: { dataSource: new StaticDataSource<User, 'id'>(many, 'id') },
+      defaultPageSize: 5,
+    });
+    await screen.findByText('User 1');
+
+    await openExportMenu(user);
+
+    expect(await screen.findByText('Export all as CSV')).toBeDefined();
+    expect(screen.queryByText('Export page as CSV')).toBeNull();
+  });
+
+  it('degrades to the visible page when the source cannot list without pagination', async () => {
+    const user = userEvent.setup();
+    // No listAll: an unbounded remote collection cannot safely honour it.
+    const limited: CrudDataSource<User, 'id'> = {
+      list: async (query) => ({ items: many.slice(0, query.pageSize), total: many.length }),
+      create: async () => many[0],
+      update: async () => many[0],
+      remove: async () => undefined,
+    };
+
+    renderTable({ hookConfig: { dataSource: limited }, defaultPageSize: 5 });
+    await screen.findByText('User 1');
+
+    await openExportMenu(user);
+
+    expect(await screen.findByText('Export page as CSV')).toBeDefined();
+  });
+
+  it('honours an explicit page-only scope even when listAll exists', async () => {
+    const user = userEvent.setup();
+    const source = new StaticDataSource<User, 'id'>(many, 'id');
+    const listAll = vi.spyOn(source, 'listAll');
+
+    renderTable({ hookConfig: { dataSource: source }, exportScope: 'page', defaultPageSize: 5 });
+    await screen.findByText('User 1');
+
+    await openExportMenu(user);
+    await user.click(await screen.findByText('Export page as JSON'));
+
+    await waitFor(() => expect(message.warning).not.toHaveBeenCalled());
+    expect(listAll).not.toHaveBeenCalled();
+  });
+
+  it('reports an export failure instead of writing an empty file', async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+    const failing: CrudDataSource<User, 'id'> = {
+      list: async (query) => ({ items: many.slice(0, query.pageSize), total: many.length }),
+      listAll: async () => {
+        throw new Error('too many rows');
+      },
+      create: async () => many[0],
+      update: async () => many[0],
+      remove: async () => undefined,
+    };
+
+    renderTable({ hookConfig: { dataSource: failing, onError }, defaultPageSize: 5 });
+    await screen.findByText('User 1');
+
+    await openExportMenu(user);
+    await user.click(await screen.findByText('Export all as CSV'));
+
+    await waitFor(() =>
+      expect(message.error).toHaveBeenCalledWith('Export failed: too many rows'),
+    );
   });
 });
