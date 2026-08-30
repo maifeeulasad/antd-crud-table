@@ -425,6 +425,13 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
         open={modalOpen}
         onOk={handleOk}
         onCancel={() => setModalOpen(false)}
+        // ProConfigProvider's intl localises ProTable's own chrome but not
+        // plain antd components, so without these the footer falls back to
+        // antd's default locale and renders Chinese buttons. Stated
+        // explicitly, matching the Modal.confirm calls and every other
+        // hardcoded string in this component.
+        okText="OK"
+        cancelText="Cancel"
         destroyOnHidden
         width={600}
       >
