@@ -87,7 +87,7 @@ const StaticDataExample = () => (
   <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 1: Static Data (In-Memory)</h2>
     <p style={{ color: '#666', marginBottom: '1rem' }}>Data resets on page refresh. Perfect for demos and prototypes.</p>
-    <CrudTableLazy<User>
+    <CrudTableLazy<User, 'id'>
       title="User Management (Static Data)"
       rowKey="id"
       defaultPageSize={5}

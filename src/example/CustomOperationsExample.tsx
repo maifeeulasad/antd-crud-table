@@ -25,38 +25,24 @@ const CustomOperationsExample = () => (
   <div style={{ marginBottom: '2rem', border: '1px solid #e8e8e8', padding: '1rem', borderRadius: '8px' }}>
     <h2>Example 3: Custom Operations (IndexedDB, GraphQL, etc.)</h2>
     <p style={{ color: '#666', marginBottom: '1rem' }}>Full control with custom CRUD operations for any data source.</p>
-    <CrudTableLazy<User>
+    <CrudTableLazy<User, 'id'>
       title="User Management (Custom Operations)"
       rowKey="id"
       defaultPageSize={5}
       hookConfig={{
         operations: {
-          getList: async (params) => {
-            console.log('Custom getList called with:', params);
-            const filteredData = mockUsers.filter(user =>
-              params.name ? user.name.toLowerCase().includes(params.name.toLowerCase()) : true
-            );
-            return {
-              data: filteredData.slice(0, params.pageSize || 5),
-              total: filteredData.length,
-              success: true,
-            };
+          list: async (query) => {
+            const needle = query.filters?.name;
+            const matched = needle
+              ? mockUsers.filter((user) =>
+                  user.name.toLowerCase().includes(String(needle).toLowerCase()),
+                )
+              : mockUsers;
+            return { items: matched.slice(0, query.pageSize), total: matched.length };
           },
-          create: async (data) => {
-            console.log('Custom create called with:', data);
-            const newUser = {
-              id: Date.now(),
-              ...data,
-            } as User;
-            return newUser;
-          },
-          update: async (id, data) => {
-            console.log('Custom update called:', id, data);
-            return { id, ...data } as User;
-          },
-          delete: async (id) => {
-            console.log('Custom delete called:', id);
-          },
+          create: async (draft) => ({ id: Date.now(), ...draft }) as User,
+          update: async (id, draft) => ({ ...draft, id }) as User,
+          remove: async () => undefined,
         },
         optimisticUpdates: false,
       }}
