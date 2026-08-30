@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { exportToCSV, exportToJSON, exportToXLSX } from './exportData';
+import { exportData, exportToCSV, exportToJSON, exportToExcel } from './exportData';
 
 interface Row {
   id: number;
@@ -83,9 +83,9 @@ describe('exportToJSON', () => {
   });
 });
 
-describe('exportToXLSX', () => {
+describe('exportToExcel', () => {
   it('emits SpreadsheetML that Excel recognizes', async () => {
-    exportToXLSX({ data: rows, columns, filename: 'people' });
+    exportToExcel({ data: rows, columns, filename: 'people' });
 
     const xml = await lastContent();
     expect(xml).toContain('<?mso-application progid="Excel.Sheet"?>');
@@ -98,7 +98,7 @@ describe('exportToXLSX', () => {
   });
 
   it('escapes XML-significant characters', async () => {
-    exportToXLSX({
+    exportToExcel({
       data: [{ id: 1, name: '<b>&"x"</b>', active: true, status: 'active' }],
       columns,
       filename: 'people',
@@ -159,7 +159,7 @@ describe('CSV formula injection', () => {
   });
 
   it('leaves SpreadsheetML content literal - ss:Formula is never emitted', async () => {
-    exportToXLSX({
+    exportToExcel({
       data: [{ v: '=1+1' }],
       columns: [{ title: 'V', dataIndex: 'v' }],
     });
@@ -167,5 +167,20 @@ describe('CSV formula injection', () => {
     expect(xml).toContain('<Cell><Data ss:Type="String">=1+1</Data></Cell>');
     expect(xml).not.toContain('ss:Formula');
     expect(xml).not.toContain("'=1+1");
+  });
+});
+
+describe('export format naming', () => {
+  it('routes the excel format to the SpreadsheetML writer', async () => {
+    exportData({ data: rows, columns, filename: 'people', format: 'excel' });
+
+    const xml = await lastContent();
+    expect(xml).toContain('<?mso-application progid="Excel.Sheet"?>');
+    expect(capturedNames.at(-1)).toBe('people.xls');
+  });
+
+  it('defaults to CSV when no format is given', async () => {
+    exportData({ data: rows, columns, filename: 'people' });
+    expect(capturedNames.at(-1)).toBe('people.csv');
   });
 });

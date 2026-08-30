@@ -97,6 +97,25 @@ New in 0.6.0: `paramNames` renames pagination and sort parameters, and
 `methods` selects the HTTP verb per operation — so an API that does not speak
 `current` / `pageSize` / `PUT` no longer needs a hand-written `operations` bag.
 
+### 5b. Export format renamed
+
+`'xlsx'` is now `'excel'`, and `exportToXLSX` is now `exportToExcel`.
+
+```diff
+- exportData({ data, columns, format: 'xlsx' });
++ exportData({ data, columns, format: 'excel' });
+```
+
+The output is unchanged — Excel 2003 SpreadsheetML written to a `.xls` file.
+Only the name changed, because `xlsx` promised OOXML, which this library does
+not produce and will not without taking on a ZIP implementation.
+
+**Known limitation:** because the content is SpreadsheetML and the extension is
+`.xls`, Excel 2016 and later show *"The file format and extension of
+'export.xls' don't match. The file could be corrupted or unsafe."* on open. The
+file is intact and opens correctly once confirmed. Use CSV if you need an
+export that opens without a prompt.
+
 ### 6. Hook return shape
 
 | 0.5.x | 0.6.0 |

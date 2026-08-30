@@ -799,7 +799,10 @@ import { CrudTableLazy } from 'antd-crud-table';
 ### Coming Soon
 - 🌐 **WebSocket Integration**: Real-time updates
 - 📊 **Virtual Scrolling**: Handle thousands of rows
-- 📤 **Export Functionality**: CSV/Excel export
+- 📤 **Export Functionality**: CSV, JSON and Excel export, covering the whole
+  filtered result set rather than the visible page.
+  Excel output is Excel 2003 SpreadsheetML in a `.xls` file, not OOXML — Excel
+  2016+ shows a format/extension mismatch prompt on open. Use CSV to avoid it.
 - 🎨 **Theme Support**: Multiple UI themes
 - 🔍 **Advanced Filters**: Complex filtering UI
 - 📱 **Mobile Optimization**: Better mobile experience
