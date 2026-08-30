@@ -5,6 +5,9 @@
 `antd-crud-table` is a highly flexible and powerful React library built using `antd` and `@ant-design/pro-components`. It provides both a declarative component-based approach and a modern hook-based architecture for creating editable, paginated tables with form support, data fetching, sorting, filtering, and custom rendering. Perfect for building admin dashboards and data management UIs with minimal boilerplate.
 
 
+**Supported peers:** React 18 or 19, antd 6, `@ant-design/pro-components` 2.8+.
+Both React majors are verified by the test suite.
+
 > **Upgrading from 0.5.x?** 0.6.0 makes the API strictly typed and replaces the
 > data strategies with classes behind a single `CrudDataSource` interface.
 > See [MIGRATION.md](./MIGRATION.md) — every break is a compile error, not a

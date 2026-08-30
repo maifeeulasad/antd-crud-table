@@ -162,6 +162,11 @@ than clearing the selection and reporting success.
 **Sorting collates by locale**, so `['Alice', 'bob', 'Dave']` rather than
 capitals-first.
 
+### 8b. React 19
+
+`peerDependencies` now accept `^18.0.0 || ^19.0.0`. Nothing to change if you are
+on 18; React 19 users no longer need `--force` or an override.
+
 ### 9. New capabilities
 
 - `dataSource` strategy — construct and own a source directly
