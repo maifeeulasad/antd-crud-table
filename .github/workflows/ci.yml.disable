@@ -10,8 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         node-version: [24.x]
+        # The package supports both React majors, so both are exercised.
+        # `react: default` uses whatever the lockfile pins; `19`/`18` override
+        # it to prove the peer range is honest rather than aspirational.
+        react: [default, 18]
 
     steps:
       - uses: actions/checkout@v4
@@ -23,9 +28,16 @@ jobs:
         run: npm i -g pnpm@10.25.0
       - name: 'Installing deps'
         run: pnpm i
+      - name: 'Pinning React ${{ matrix.react }}'
+        if: matrix.react != 'default'
+        run: |
+          pnpm add -D react@^${{ matrix.react }} react-dom@^${{ matrix.react }} \
+            @types/react@^${{ matrix.react }} @types/react-dom@^${{ matrix.react }}
       - name: 'Lint'
         run: pnpm lint
       - name: 'Test'
         run: pnpm test
+      - name: 'Typecheck the demo app'
+        run: pnpm exec tsc --noEmit -p tsconfig.app.json
       - name: 'Build library'
         run: pnpm build:lib
