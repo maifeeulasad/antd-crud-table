@@ -16,6 +16,8 @@ import type {
   RestDataSourceOptions,
 } from '../core';
 import type { CrudOperations } from '../core/CustomDataSource';
+import { enUS } from '../locale/en_US';
+import type { CrudTableLocale, PartialCrudTableLocale } from '../locale/types';
 
 /** The operations a table performs, used to tag success and error callbacks. */
 export type CrudOperationName = 'list' | 'create' | 'update' | 'delete';
@@ -76,6 +78,14 @@ interface UseCrudTableOptionsBase<T, K extends keyof T> {
 
   /** Show antd toasts for the outcome of each operation. */
   notifications?: boolean;
+
+  /**
+   * Overrides for the toast wording.
+   *
+   * `CrudTable` passes its own resolved locale down, so this is only needed
+   * when the hook is used on its own.
+   */
+  locale?: PartialCrudTableLocale;
 
   /** Called after an operation succeeds, with whatever it produced. */
   onSuccess?: (operation: CrudOperationName, payload: unknown) => void;
@@ -194,6 +204,11 @@ export const useCrudTable = <T extends object, K extends keyof T>(
     notifications = true,
   } = options;
 
+  const strings: CrudTableLocale = useMemo(
+    () => (options.locale ? { ...enUS, ...options.locale } : enUS),
+    [options.locale],
+  );
+
   // Read through a ref so callback identity does not change every render.
   // `options` is almost always an object literal at the call site, so
   // depending on it directly recreated every callback on every render and
@@ -286,7 +301,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
           total: prev.total + 1,
           loading: false,
         }));
-        succeed('create', created, 'Created successfully');
+        succeed('create', created, strings.createSuccess);
         return created;
       } catch (thrown) {
         setState((prev) => ({ ...prev, loading: false }));
@@ -294,7 +309,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
         return null;
       }
     },
-    [dataSource, reconcile, report, succeed],
+    [dataSource, reconcile, report, succeed, strings],
   );
 
   const update = useCallback(
@@ -307,7 +322,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
           data: prev.data.map((item) => (item[rowKey] === id ? updated : item)),
           loading: false,
         }));
-        succeed('update', updated, 'Updated successfully');
+        succeed('update', updated, strings.updateSuccess);
         return updated;
       } catch (thrown) {
         setState((prev) => ({ ...prev, loading: false }));
@@ -315,7 +330,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
         return null;
       }
     },
-    [dataSource, reconcile, report, rowKey, succeed],
+    [dataSource, reconcile, report, rowKey, succeed, strings],
   );
 
   const remove = useCallback(
@@ -329,7 +344,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
           total: Math.max(0, prev.total - 1),
           loading: false,
         }));
-        succeed('delete', id, 'Deleted successfully');
+        succeed('delete', id, strings.deleteSuccess);
         return true;
       } catch (thrown) {
         setState((prev) => ({ ...prev, loading: false }));
@@ -337,7 +352,7 @@ export const useCrudTable = <T extends object, K extends keyof T>(
         return false;
       }
     },
-    [dataSource, reconcile, report, rowKey, succeed],
+    [dataSource, reconcile, report, rowKey, succeed, strings],
   );
 
   const setPage = useCallback((next: number) => {

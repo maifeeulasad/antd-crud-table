@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import type { ReactElement } from 'react';
 
 import type { CrudTableConfig } from './CrudTable';
+import { enUS } from './locale/en_US';
 
 /** The generic signature `React.lazy` erases. */
 type CrudTableComponent = <T extends object, K extends keyof T>(
@@ -17,7 +18,11 @@ const LazyCrudTable = lazy(() => import('./CrudTable')) as unknown as CrudTableC
 /** Code-split `CrudTable`, keeping the same typed configuration. */
 const CrudTableLazy = <T extends object, K extends keyof T>(props: CrudTableConfig<T, K>) => (
   <Suspense
-    fallback={<div style={{ textAlign: 'center', padding: '2rem' }}>Loading CRUD table…</div>}
+    fallback={
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        {props.locale?.loading ?? enUS.loading}
+      </div>
+    }
   >
     <LazyCrudTable {...props} />
   </Suspense>

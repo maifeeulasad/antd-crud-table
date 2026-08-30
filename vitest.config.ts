@@ -30,10 +30,10 @@ export default defineConfig({
       // tested code. The component and registry suites then took it from
       // 54% to 87%.
       thresholds: {
-        statements: 87,
-        branches: 79,
-        functions: 88,
-        lines: 88,
+        statements: 91,
+        branches: 82,
+        functions: 92,
+        lines: 92,
       },
     },
   },

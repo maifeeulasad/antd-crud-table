@@ -12,6 +12,49 @@ Connecting to an API that does not speak the default dialect?
 See [REST dialect recipes](./docs/rest-recipes.md) — offset/limit, Django REST
 Framework, JSON:API, and auth.
 
+### Localization
+
+The table follows the antd `ConfigProvider` around it, so setting your app
+locale once localizes the pagination, date pickers, empty states and the
+ProTable chrome:
+
+```tsx
+import { ConfigProvider } from 'antd';
+import frFR from 'antd/locale/fr_FR';
+
+<ConfigProvider locale={frFR}>
+  <CrudTable {...config} />
+</ConfigProvider>
+```
+
+**With no `ConfigProvider` in the tree the table supplies English itself.**
+antd components otherwise fall back to their own built-in defaults, which is
+why a table used outside a provider previously showed Chinese pagination and
+modal buttons beside English ProTable chrome.
+
+The library's own wording — `Actions`, `Edit`, `New`, the confirmations, the
+export menu, the toasts — comes from a `locale` prop. Supply only what you want
+to change; anything omitted stays English:
+
+```tsx
+<CrudTable
+  locale={{
+    actions: 'Aktionen',
+    edit: 'Bearbeiten',
+    delete: 'Löschen',
+    create: 'Neu',
+    confirmDeleteTitle: 'Wirklich löschen?',
+    deleteSelected: (count) => `${count} entfernen`,
+  }}
+  {...config}
+/>
+```
+
+Interpolated strings are functions rather than templates with placeholders, so
+a translation cannot silently drop a value or reorder its arguments — the
+compiler checks it. The full contract is `CrudTableLocale`, and `enUS` is the
+exported default.
+
 ### Stylesheet
 
 The library build extracts its CSS to a separate file, so **you must import it
