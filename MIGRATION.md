@@ -167,6 +167,28 @@ capitals-first.
 `peerDependencies` now accept `^18.0.0 || ^19.0.0`. Nothing to change if you are
 on 18; React 19 users no longer need `--force` or an override.
 
+### 8c. Default exports removed from utility modules
+
+`useCrudTable`, `useLocalStorageCrud` and `exportData` no longer have default
+exports — the named exports already existed, and the mix meant CJS consumers
+reached them through `.default`.
+
+```diff
+- import useCrudTable from 'antd-crud-table/hooks/useCrudTable';
++ import { useCrudTable } from 'antd-crud-table/hooks/useCrudTable';
+```
+
+`import CrudTable from 'antd-crud-table'` is unchanged.
+
+### 8d. Stylesheet import
+
+Not a change, but frequently missed and previously undocumented: the build
+extracts CSS to a separate file, so it has to be imported once.
+
+```ts
+import 'antd-crud-table/styles.css';
+```
+
 ### 9. New capabilities
 
 - `dataSource` strategy — construct and own a source directly

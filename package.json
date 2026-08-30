@@ -16,6 +16,9 @@
     "components"
   ],
   "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "author": "Maifee Ul Asad<maifeeulasad@gmail.com>",
   "packageManager": "pnpm@10.25.0",
   "scripts": {
@@ -102,5 +105,8 @@
   },
   "files": [
     "dist"
+  ],
+  "sideEffects": [
+    "*.css"
   ]
 }

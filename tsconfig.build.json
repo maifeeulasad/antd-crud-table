@@ -23,5 +23,9 @@
     },
     "include": [
         "lib"
+    ],
+    "exclude": [
+        "lib/**/*.test.ts",
+        "lib/**/*.test.tsx"
     ]
 }

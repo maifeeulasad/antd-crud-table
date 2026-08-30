@@ -265,4 +265,3 @@ export const exportAllData = async <T extends object>(
   }
 };
 
-export default exportData;

@@ -8,6 +8,15 @@
 **Supported peers:** React 18 or 19, antd 6, `@ant-design/pro-components` 2.8+.
 Both React majors are verified by the test suite.
 
+### Stylesheet
+
+The library build extracts its CSS to a separate file, so **you must import it
+once** — importing the component alone leaves the table unstyled:
+
+```ts
+import 'antd-crud-table/styles.css';
+```
+
 > **Upgrading from 0.5.x?** 0.6.0 makes the API strictly typed and replaces the
 > data strategies with classes behind a single `CrudDataSource` interface.
 > See [MIGRATION.md](./MIGRATION.md) — every break is a compile error, not a

@@ -324,4 +324,3 @@ export const useCrudTable = <T extends object, K extends keyof T>(
   );
 };
 
-export default useCrudTable;
