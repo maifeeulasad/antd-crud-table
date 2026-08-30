@@ -7,6 +7,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['lib/**/*.test.{ts,tsx}'],
+    // Component tests mount ProTable, which pulls in antd's config provider,
+    // table, form and portal machinery. That is genuinely slow, and slower
+    // again under coverage instrumentation, so the 5s default is too tight.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
@@ -16,19 +21,19 @@ export default defineConfig({
       // rather than being inflated by re-export lines.
       include: ['lib/**/*.{ts,tsx}'],
       exclude: ['lib/**/*.test.{ts,tsx}', 'lib/index.ts'],
-      // Ratchet, not an aspiration. Raise these as suites land (#29) so a
-      // regression fails the run; never lower them to make a build pass.
+      // Ratchet, not an aspiration. Raise these as coverage improves; never
+      // lower them to make a build pass.
       //
-      // Re-baselined once, when the data sources replaced the old hook
-      // internals: that removed a fully covered module and grew CrudTable,
-      // changing the denominator rather than the coverage of tested code
-      // (lib/hooks went 64% -> 87% in the same change). CrudTable.tsx and
-      // registry.tsx remain at 0%, which is what #29 exists to fix.
+      // Re-baselined once, downward, when the data sources replaced the old
+      // hook internals: that removed a fully covered module and grew
+      // CrudTable, changing the denominator rather than the coverage of
+      // tested code. The component and registry suites then took it from
+      // 54% to 87%.
       thresholds: {
-        statements: 54,
-        branches: 47,
-        functions: 44,
-        lines: 54,
+        statements: 87,
+        branches: 79,
+        functions: 88,
+        lines: 88,
       },
     },
   },
