@@ -5,7 +5,41 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-30
+
+### Added
+
+- **Full localization.** Every user-visible string is overridable through a
+  `locale` prop typed by `CrudTableLocale`, with `enUS` as the exported default.
+  Interpolated strings are functions rather than templates with placeholders, so
+  a translation cannot drop a value or reorder its arguments.
+- The table follows the surrounding antd `ConfigProvider`, deriving ProTable's
+  message bundle from the app locale instead of pinning it to English.
+- `FieldTypeDefinition` hooks receive the resolved strings, so registry entries
+  no longer hardcode `Yes`, `-` or their validation messages.
+- Analytics are injected into every generated page of the deployed site. The
+  demo carried a tag by hand; the 68 TypeDoc pages and Storybook did not.
+
+### Fixed
+
+- **antd chrome fell back to Chinese when no `ConfigProvider` was present.**
+  ProTable's `intl` does not reach plain antd components — pagination, empty
+  states and the modal footer read antd's own provider. Without one they used
+  antd's built-in defaults. The table now supplies English in exactly that case,
+  without overriding a consumer's provider when they have one.
+- Storybook's deployed build requested assets from the domain root rather than
+  the project subpath, so no story loaded on GitHub Pages.
+- Removed a favicon link pointing at a file that does not exist.
+
+### Documentation
+
+- README rewritten for the current API. It still described the 0.5.x surface and
+  carried two "API Reference" sections that had drifted apart; 904 lines to 376.
+
 ## [0.6.0] - 2026-08-30
+
+> Never published to npm — the release workflows were disabled while this work
+> was verified locally. Everything below ships as part of 0.7.0.
 
 A breaking release. See [MIGRATION.md](./MIGRATION.md) — every break is a
 compile error rather than a silent behaviour change.
@@ -113,4 +147,4 @@ compile error rather than a silent behaviour change.
 - Testing Library's cleanup was never registering, so renders accumulated
   across tests in the same file.
 
-[0.6.0]: https://github.com/maifeeulasad/antd-crud-table/releases/tag/v0.6.0
+[0.7.0]: https://github.com/maifeeulasad/antd-crud-table/releases/tag/v0.7.0
