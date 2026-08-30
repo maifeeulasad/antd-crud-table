@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 
 import { useCrudTable } from './useCrudTable';
-import type { CrudTableActions, UseCrudTableOptions } from './useCrudTable';
+import type { CrudTableActions, LocalStorageStrategy } from './useCrudTable';
 
 /**
  * Options for the localStorage strategy, minus the strategy selector itself.
  */
+/** Options for the localStorage strategy, minus the strategy selector itself. */
 export type UseLocalStorageCrudOptions<T, K extends keyof T> = Omit<
-  Extract<UseCrudTableOptions<T, K>, { storageKey: string }>,
+  LocalStorageStrategy<T, K>,
   'storageKey' | 'initialData'
 >;
 

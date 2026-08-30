@@ -2,32 +2,49 @@ import type { CrudDataSource, CrudDraft, CrudPage, CrudQuery, CrudSort } from '.
 
 /** Paths appended to `baseUrl` for each operation. */
 export interface RestEndpoints {
+  /** Path listing records. */
   list: string;
+  /** Path accepting a new record. */
   create: string;
+  /** Path for updating one record; the id is appended by `buildRecordPath`. */
   update: string;
+  /** Path for deleting one record; the id is appended by `buildRecordPath`. */
   remove: string;
 }
 
 /** Query-string parameter names, for APIs that do not speak ProTable's vocabulary. */
 export interface RestParamNames {
+  /** Parameter carrying the 1-based page number. Defaults to `current`. */
   page: string;
+  /** Parameter carrying the page size. Defaults to `pageSize`. */
   pageSize: string;
+  /** Parameter carrying the field to sort by. Defaults to `sortBy`. */
   sortBy: string;
+  /** Parameter carrying the sort direction. Defaults to `sortOrder`. */
   sortOrder: string;
 }
 
 /** HTTP verbs used per mutating operation. */
 export interface RestMethods {
+  /** Verb for creating a record. Defaults to `POST`. */
   create: 'POST' | 'PUT';
+  /** Verb for updating a record. Defaults to `PUT`. */
   update: 'PUT' | 'PATCH' | 'POST';
+  /** Verb for deleting a record. Defaults to `DELETE`. */
   remove: 'DELETE' | 'POST';
 }
 
+/** Everything needed to point a {@link RestDataSource} at an API. */
 export interface RestDataSourceOptions<T> {
+  /** Prefixed to every request path, exactly once. */
   baseUrl?: string;
+  /** Overrides for the per-operation paths. */
   endpoints?: Partial<RestEndpoints>;
+  /** Overrides for query-parameter names, for APIs with another vocabulary. */
   paramNames?: Partial<RestParamNames>;
+  /** Overrides for the HTTP verb used by each mutating operation. */
   methods?: Partial<RestMethods>;
+  /** Sent with every request, merged over the default content type. */
   headers?: Readonly<Record<string, string>>;
   /** Maps a draft onto the request body. Defaults to sending the draft as-is. */
   serializeRequest?: (draft: CrudDraft<T>) => unknown;
@@ -64,7 +81,9 @@ const DEFAULT_METHODS: RestMethods = {
  * surface a validation payload, rather than receiving a flattened string.
  */
 export class RestError extends Error {
+  /** The HTTP status the server responded with. */
   readonly status: number;
+  /** The raw response body, for reading a validation payload. */
   readonly body: string;
 
   constructor(status: number, body: string, url: string) {
@@ -83,12 +102,19 @@ export class RestError extends Error {
  * instead of a full reimplementation of the strategy.
  */
 export class RestDataSource<T extends object, K extends keyof T> implements CrudDataSource<T, K> {
+  /** Prefixed to every request path, exactly once. */
   protected readonly baseUrl: string;
+  /** Resolved per-operation paths. */
   protected readonly endpoints: RestEndpoints;
+  /** Resolved query-parameter names. */
   protected readonly paramNames: RestParamNames;
+  /** Resolved HTTP verbs. */
   protected readonly methods: RestMethods;
+  /** Headers sent with every request. */
   protected readonly headers: Readonly<Record<string, string>>;
+  /** Maps a draft onto the request body. */
   protected readonly serializeRequest: (draft: CrudDraft<T>) => unknown;
+  /** Maps a list payload onto a page, when the API wraps its results. */
   protected readonly parseResponse?: (payload: unknown) => CrudPage<T>;
   private readonly fetchImpl: typeof fetch;
 

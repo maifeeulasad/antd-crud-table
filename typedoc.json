@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["lib/index.ts"],
+  "tsconfig": "tsconfig.build.json",
+  "out": "dist-site/api",
+  "name": "antd-crud-table API",
+  "readme": "none",
+  "hideGenerator": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "categorizeByGroup": true,
+  "navigationLinks": {
+    "Demo": "../",
+    "Storybook": "../storybook/",
+    "GitHub": "https://github.com/maifeeulasad/antd-crud-table"
+  },
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": true
+  }
+}

@@ -160,3 +160,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# generated site (demo + api + storybook)
+dist-site/

@@ -24,16 +24,25 @@ import type { ExportFormat } from './utils/exportData';
  */
 export interface CrudColumnFor<T, K extends keyof T>
   extends Omit<ProColumns<T>, 'dataIndex' | 'title' | 'render'> {
+  /** The record property this column reads. */
   dataIndex: K;
   /** Also used as the form label, so a plain string rather than a ReactNode. */
   title: string;
+  /** Which registry entry renders and edits this column. Defaults to `string`. */
   fieldType?: FieldType;
+  /** Selectable values, for `enum` columns. */
   enumOptions?: Record<string, EnumOption>;
+  /** Cell renderer for `custom` columns, receiving this property's type. */
   customRender?: (value: T[K], record: T) => React.ReactNode;
+  /** How this column behaves in the create/edit form. */
   formConfig?: {
+    /** Adds a required rule, unless `rules` is given instead. */
     required?: boolean;
+    /** Replaces the registry's control entirely. */
     component?: React.ReactNode;
+    /** Applied to the submitted value before it reaches the data source. */
     transform?: (value: T[K]) => T[K];
+    /** antd validation rules. Replaces `required` when both are present. */
     rules?: FormRule[];
   };
   /** Editable in the create/edit form. Defaults to true. */
@@ -52,18 +61,25 @@ export interface CrudColumnFor<T, K extends keyof T>
  */
 export type CrudColumn<T> = { [K in keyof T]-?: CrudColumnFor<T, K> }[keyof T];
 
+/** Everything needed to render a {@link CrudTable}. */
 export interface CrudTableConfig<T extends object, K extends keyof T> {
+  /** Column definitions, each bound to a property of `T`. */
   columns: readonly CrudColumn<T>[];
+  /** The property holding each record's identity. */
   rowKey: K;
+  /** Table header, also used to name exported files. */
   title: string;
+  /** Rows per page. Defaults to 10. */
   defaultPageSize?: number;
 
   /** Selects and configures the data strategy. */
   hookConfig: UseCrudTableOptions<T, K>;
 
+  /** Show row selection and the bulk delete control. Defaults to false. */
   enableBulkOperations?: boolean;
   /** Show ProTable's column visibility and density controls. Defaults to true. */
   enableColumnSettings?: boolean;
+  /** Show the export entries in the toolbar menu. Defaults to true. */
   enableExport?: boolean;
   /**
    * Whether export covers the whole filtered result set or just the rows on
@@ -71,6 +87,7 @@ export interface CrudTableConfig<T extends object, K extends keyof T> {
    * cannot list without pagination.
    */
   exportScope?: 'all' | 'page';
+  /** Extra per-row controls, appended after Edit and Delete. */
   customActions?: (record: T, actions: CrudTableActions<T, K>) => React.ReactNode[];
 }
 
@@ -125,6 +142,20 @@ const toCrudQuery = <T extends object>(
   };
 };
 
+/**
+ * A paginated, searchable table with a create/edit form and CRUD wired through
+ * a {@link CrudDataSource}.
+ *
+ * @example
+ * ```tsx
+ * <CrudTable<User, 'id'>
+ *   title="Users"
+ *   rowKey="id"
+ *   columns={[{ dataIndex: 'name', title: 'Name', fieldType: 'string' }]}
+ *   hookConfig={{ staticData: users }}
+ * />
+ * ```
+ */
 const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<T, K>) => {
   const {
     columns,

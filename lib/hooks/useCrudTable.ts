@@ -32,16 +32,25 @@ export const toError = (thrown: unknown): Error => {
   return new Error(typeof thrown === 'string' ? thrown : 'Unknown error', { cause: thrown });
 };
 
+/** Everything the hook tracks about the current view of the data. */
 export interface CrudTableState<T> {
+  /** Whether a read or write is in flight. */
   loading: boolean;
+  /** The most recent failure, cleared when a read succeeds. */
   error: Error | null;
+  /** Records from the last read. Empty until `refresh` has run. */
   data: readonly T[];
+  /** Records matching the filters, across all pages. */
   total: number;
+  /** Current 1-based page. */
   page: number;
+  /** Current rows per page. */
   pageSize: number;
 }
 
+/** Options shared by every strategy. */
 interface UseCrudTableOptionsBase<T, K extends keyof T> {
+  /** Rows per page for the hook's own reads. Defaults to 10. */
   defaultPageSize?: number;
 
   /**
@@ -68,28 +77,40 @@ interface UseCrudTableOptionsBase<T, K extends keyof T> {
   /** Show antd toasts for the outcome of each operation. */
   notifications?: boolean;
 
+  /** Called after an operation succeeds, with whatever it produced. */
   onSuccess?: (operation: CrudOperationName, payload: unknown) => void;
+  /** Called when an operation fails, with a real Error rather than the raw throw. */
   onError?: (operation: CrudOperationName, error: Error) => void;
 }
 
-interface StaticStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+/** Serves records from an in-process array. */
+export interface StaticStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  /** Seed records. Copied once; later changes to the array are not picked up. */
   staticData: readonly T[];
 }
 
-interface RestStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+/** Serves records from a REST API. */
+export interface RestStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  /** Endpoints, parameter names, verbs and payload mapping. */
   api: RestDataSourceOptions<T>;
 }
 
-interface LocalStorageStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+/** Serves records persisted to `localStorage`. */
+export interface LocalStorageStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  /** The `localStorage` key records are stored under. */
   storageKey: string;
+  /** Records used when the key holds nothing readable. */
   initialData?: readonly T[];
 }
 
-interface OperationsStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+/** Serves records through consumer-supplied operations. */
+export interface OperationsStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+  /** Your own implementations. Omitted operations fail with a named error. */
   operations: CrudOperations<T, K>;
 }
 
-interface DataSourceStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
+/** Serves records from a source the consumer constructs and owns. */
+export interface DataSourceStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
   /** A source the consumer constructs and owns outright. */
   dataSource: CrudDataSource<T, K>;
 }
@@ -102,19 +123,28 @@ export type UseCrudTableOptions<T, K extends keyof T> =
   | OperationsStrategy<T, K>
   | DataSourceStrategy<T, K>;
 
+/** What {@link useCrudTable} returns. */
 export interface CrudTableActions<T, K extends keyof T> {
+  /** Re-read the current page into `state`. */
   refresh: () => Promise<void>;
+  /** Create a record. Resolves to the stored result, or `null` on failure. */
   create: (draft: CrudDraft<T>) => Promise<T | null>;
+  /** Update a record. Resolves to the stored result, or `null` on failure. */
   update: (id: T[K], draft: CrudDraft<T>) => Promise<T | null>;
+  /** Delete a record. Resolves to whether it succeeded. */
   remove: (id: T[K]) => Promise<boolean>;
 
   /** The live source, for wiring a table's own request pipeline directly. */
   dataSource: CrudDataSource<T, K>;
 
+  /** Move to a 1-based page. */
   setPage: (page: number) => void;
+  /** Change the page size, returning to the first page. */
   setPageSize: (size: number) => void;
 
+  /** Current loading, error, data and pagination state. */
   state: CrudTableState<T>;
+  /** ProTable's imperative handle, for reloading the table's own pipeline. */
   actionRef: React.RefObject<ActionType | undefined>;
 }
 

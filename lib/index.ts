@@ -14,6 +14,11 @@ export type {
   CrudTableActions,
   CrudTableState,
   UseCrudTableOptions,
+  StaticStrategy,
+  RestStrategy,
+  LocalStorageStrategy,
+  OperationsStrategy,
+  DataSourceStrategy,
 } from './hooks/useCrudTable';
 export type { UseLocalStorageCrudOptions } from './hooks/useLocalStorageCrud';
 
@@ -64,4 +69,4 @@ export {
   exportToExcel,
   exportAllData,
 } from './utils/exportData';
-export type { ExportFormat } from './utils/exportData';
+export type { ColumnOption, ExportFormat, ExportOptions } from './utils/exportData';
