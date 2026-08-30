@@ -29,6 +29,18 @@ export default tseslint.config(
       // Record<string, unknown> constraints. Keep the rule visible as a
       // warning so new accidental `any`s still surface without failing CI.
       '@typescript-eslint/no-explicit-any': 'warn',
+      // A leading underscore marks a binding that is deliberately unused.
+      // Overridable base-class methods must keep their full parameter list
+      // for subclass overrides to remain type-compatible, even where the
+      // base implementation ignores them.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 )
