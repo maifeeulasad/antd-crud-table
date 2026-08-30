@@ -23,11 +23,14 @@ jobs:
       run: npm i -g pnpm@10.25.0
     - name: 'Installing deps'    
       run: pnpm i
-    - name: 'Build'
-      run: pnpm build:static
+    # One tree: the demo at the root, Storybook under /storybook, the
+    # TypeDoc reference under /api. The demo builds first because it empties
+    # dist-site.
+    - name: 'Build site'
+      run: pnpm build:site
     - name: 'Deploy'
       uses: peaceiris/actions-gh-pages@v4
       with:
         deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        publish_dir: ./dist
+        publish_dir: ./dist-site
         allow_empty_commit: true
