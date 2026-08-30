@@ -1,4 +1,12 @@
-export type ExportFormat = 'csv' | 'json' | 'xlsx';
+/**
+ * Supported export formats.
+ *
+ * `excel` emits Excel 2003 SpreadsheetML, not OOXML. It was previously named
+ * `xlsx`, which promised a format this library does not produce - writing a
+ * real .xlsx means owning a ZIP implementation, which is not worth a
+ * dependency-free library taking on. See exportToExcel for the tradeoff.
+ */
+export type ExportFormat = 'csv' | 'json' | 'excel';
 
 interface ColumnOption {
   title?: string;
@@ -139,11 +147,17 @@ export const exportToJSON = <T>(options: ExportOptions<T>): void => {
 /**
  * Export data as an Excel-compatible spreadsheet.
  *
- * Emits Excel 2003 SpreadsheetML (an XML dialect Excel and LibreOffice
- * open natively from a .xls file) rather than a real OOXML .xlsx, which
- * would require a dedicated dependency such as exceljs.
+ * Emits Excel 2003 SpreadsheetML - an XML dialect Excel and LibreOffice open
+ * natively - written to a `.xls` file, rather than a real OOXML `.xlsx`, which
+ * would mean adding a dependency such as exceljs or hand-rolling a ZIP writer.
+ *
+ * Known consequence: because the content is SpreadsheetML and the extension is
+ * `.xls`, Excel 2016 and later show "The file format and extension don't
+ * match" on open. The file is intact and opens correctly once confirmed. The
+ * format is named `excel` rather than `xlsx` so the API does not claim
+ * otherwise.
  */
-export const exportToXLSX = <T extends object>(options: ExportOptions<T>): void => {
+export const exportToExcel = <T extends object>(options: ExportOptions<T>): void => {
   const { data, columns, filename = 'export' } = options;
 
   // Get visible columns
@@ -225,8 +239,8 @@ export const exportData = <T extends object>(
     case 'json':
       exportToJSON(options);
       break;
-    case 'xlsx':
-      exportToXLSX(options);
+    case 'excel':
+      exportToExcel(options);
       break;
     default:
       exportToCSV(options);

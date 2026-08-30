@@ -61,7 +61,7 @@ export {
   exportData,
   exportToCSV,
   exportToJSON,
-  exportToXLSX,
+  exportToExcel,
   exportAllData,
 } from './utils/exportData';
 export type { ExportFormat } from './utils/exportData';

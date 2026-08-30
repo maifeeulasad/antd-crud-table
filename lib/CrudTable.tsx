@@ -453,7 +453,7 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
                         key: 'export-excel',
                         label: `${exportLabel} as Excel`,
                         disabled: exporting,
-                        onClick: () => void handleExport('xlsx'),
+                        onClick: () => void handleExport('excel'),
                       },
                       { type: 'divider' as const },
                     ]
