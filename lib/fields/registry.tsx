@@ -52,6 +52,18 @@ export interface FieldTypeDefinition {
   toFormValue?: (value: unknown) => unknown;
   /** Convert the submitted form value back into the record shape. */
   fromFormValue?: (value: unknown) => unknown;
+  /**
+   * Convert a raw string cell from an imported file into the record shape.
+   *
+   * Import values arrive as text (a CSV field, a spreadsheet cell), which is a
+   * different starting point from {@link fromFormValue} (whose input is the
+   * form control's own value - a dayjs, a boolean, an object). A type that
+   * needs no conversion omits this and the raw string is stored as-is; types
+   * whose record shape is not a string (numbers, dates, arrays, JSON) provide
+   * one. `enum` is resolved by the importer instead, since it needs the
+   * column's `enumOptions` to accept either the stored key or the exported label.
+   */
+  fromImportValue?: (value: string) => unknown;
   /** Validation rules implied by the type itself (merged before user rules). */
   rules?: (col: FieldColumn, locale: CrudTableLocale) => FormRule[];
   /** Form.Item valuePropName override (e.g. 'checked' for Switch). */
@@ -76,6 +88,30 @@ const asNumber = (value: unknown): number => {
 
 /** Narrow to a key usable against `enumOptions`. */
 const asKey = (value: unknown): string => String(value);
+
+/**
+ * Parse an imported text cell into a number, keeping the raw string when it is
+ * not a clean numeric literal so validation (or the consumer) can flag it
+ * rather than silently storing `NaN`.
+ */
+const importNumber = (value: string): number | string => {
+  const trimmed = value.trim();
+  if (trimmed === '') return value;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : value;
+};
+
+/** Truthy/falsy words the boolean export and common spreadsheets produce. */
+const TRUE_WORDS = new Set(['yes', 'true', '1', 'y', 't']);
+const FALSE_WORDS = new Set(['no', 'false', '0', 'n', 'f']);
+
+/** Parse an imported text cell into a boolean, keeping the raw string otherwise. */
+const importBoolean = (value: string): boolean | string => {
+  const key = value.trim().toLowerCase();
+  if (TRUE_WORDS.has(key)) return true;
+  if (FALSE_WORDS.has(key)) return false;
+  return value;
+};
 
 /**
  * Schemes safe to place in an `href` or `src`.
@@ -146,6 +182,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <InputNumber style={{ width: '100%' }} disabled={disabled} />
     ),
+    fromImportValue: importNumber,
   },
 
   date: {
@@ -164,6 +201,12 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     toFormValue: (value) => (isPresent(value) ? dayjs(asText(value)) : value),
     fromFormValue: (value) =>
       dayjs.isDayjs(value) ? value.toISOString() : value,
+    // Imported dates arrive as text (the export writes the stored value via
+    // String()); normalise to ISO when parseable, otherwise keep the raw text.
+    fromImportValue: (value) => {
+      const parsed = dayjs(value);
+      return parsed.isValid() ? parsed.toISOString() : value;
+    },
   },
 
   boolean: {
@@ -177,6 +220,8 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     }),
     formControl: (_col, disabled) => <Switch disabled={disabled} />,
     valuePropName: 'checked',
+    // Accepts the "Yes"/"No" the export writes, plus true/false/1/0/y/n.
+    fromImportValue: importBoolean,
   },
 
   enum: {
@@ -266,6 +311,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <InputNumber style={{ width: '100%' }} precision={2} min={0} disabled={disabled} />
     ),
+    fromImportValue: importNumber,
   },
 
   percent: {
@@ -279,6 +325,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
         disabled={disabled}
       />
     ),
+    fromImportValue: importNumber,
   },
 
   rating: {
@@ -289,6 +336,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       ),
     }),
     formControl: (_col, disabled) => <Rate allowHalf disabled={disabled} />,
+    fromImportValue: importNumber,
   },
 
   progress: {
@@ -301,6 +349,7 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled) => (
       <InputNumber style={{ width: '100%' }} min={0} max={100} disabled={disabled} />
     ),
+    fromImportValue: importNumber,
   },
 
   // Stored as an 'HH:mm:ss' string
@@ -335,6 +384,14 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
       Array.isArray(value)
         ? value.map((v) => (dayjs.isDayjs(v) ? v.toISOString() : v))
         : value,
+    // A single imported cell carries both ends; split on comma and normalise
+    // each to ISO. Anything that is not a clean two-date pair is kept as text.
+    fromImportValue: (value) => {
+      const parts = value.split(',').map((part) => part.trim()).filter((part) => part !== '');
+      if (parts.length !== 2) return value;
+      const parsed = parts.map((part) => dayjs(part));
+      return parsed.every((d) => d.isValid()) ? parsed.map((d) => d.toISOString()) : value;
+    },
   },
 
   // Stored as string[]
@@ -355,6 +412,9 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     formControl: (_col, disabled, locale) => (
       <Select mode="tags" open={false} suffixIcon={null} disabled={disabled} placeholder={locale.tagsPlaceholder} />
     ),
+    // The export writes tags as a comma-joined string; split them back apart.
+    fromImportValue: (value) =>
+      value.split(',').map((tag) => tag.trim()).filter((tag) => tag !== ''),
   },
 
   // Stored as an image URL
@@ -424,6 +484,9 @@ export const fieldRegistry: Record<FieldType, FieldTypeDefinition> = {
     toFormValue: (value) =>
       typeof value === 'string' ? value : JSON.stringify(value, null, 2),
     fromFormValue: (value) => (typeof value === 'string' && value.trim() !== '' ? JSON.parse(value) : value),
+    // Imported JSON is a string; parse it into the stored object/array. Invalid
+    // JSON throws, which the importer reports as a per-row error.
+    fromImportValue: (value) => (value.trim() !== '' ? JSON.parse(value) : value),
     rules: (_col, locale) => [
       {
         validator: async (_rule: unknown, value: unknown) => {

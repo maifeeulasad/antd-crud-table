@@ -62,6 +62,45 @@ export interface CrudTableLocale {
   /** Error shown when gathering or writing the export failed. */
   exportFailed: (message: string) => string;
 
+  /** Menu entry that opens the import dialog. */
+  importMenu: string;
+  /** Import dialog title. */
+  importTitle: string;
+  /** Prompt to choose a file to import. */
+  importSelectFile: string;
+  /** Hint listing the accepted file formats (e.g. "CSV"). */
+  importAcceptHint: (formats: string) => string;
+  /** Heading of the header-to-column mapping step. */
+  importMapColumns: string;
+  /** The "do not import this column" option in the mapping selects. */
+  importIgnoreColumn: string;
+  /** Heading of the parsed-row preview. */
+  importPreview: string;
+  /** Column header for the row-number column in the preview. */
+  importRowLabel: string;
+  /** Column header for the per-row status column in the preview. */
+  importStatusLabel: string;
+  /** Status text for a row that passed validation. */
+  importRowValid: string;
+  /** Summary of how many rows are valid / invalid before importing. */
+  importSummary: (valid: number, invalid: number) => string;
+  /** Note shown when the preview is truncated to the first `shown` of `total`. */
+  importPreviewTruncated: (shown: number, total: number) => string;
+  /** Label of the button that performs the import. */
+  importRun: string;
+  /** Label of the button that returns to file selection. */
+  importBack: string;
+  /** Warning shown when no rows are valid to import. */
+  importNothingValid: string;
+  /** Confirmation that every row was imported. */
+  importSuccess: (count: number) => string;
+  /** Report of a partial import: created of total, with a failure count. */
+  importPartial: (created: number, total: number, failed: number) => string;
+  /** Error shown when reading or parsing the file failed. */
+  importParseFailed: (message: string) => string;
+  /** Error shown when the chosen file's format is not supported. */
+  importUnsupportedFormat: (name: string) => string;
+
   /** Confirmation that a record was created. */
   createSuccess: string;
   /** Confirmation that a record was updated. */
