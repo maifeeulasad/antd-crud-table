@@ -82,6 +82,15 @@ export interface CrudDataSource<T, K extends keyof T> {
   /** Persist a new record and return it as stored, identity included. */
   create(draft: CrudDraft<T>): Promise<T>;
 
+  /**
+   * Persist many new records in one call, returning them as stored.
+   *
+   * Exists so bulk import can avoid firing one request per row against sources
+   * that can create server-side in a batch. Optional: callers must fall back to
+   * repeated `create` (with bounded concurrency) when a source does not offer it.
+   */
+  createMany?(drafts: readonly CrudDraft<T>[]): Promise<readonly T[]>;
+
   /** Merge `draft` into the record at `id` and return the stored result. */
   update(id: T[K], draft: CrudDraft<T>): Promise<T>;
 
