@@ -37,9 +37,17 @@ const API_VERSION = '2024-01';
 
 let server: ChildProcess;
 
+/** Anything the server printed, so a startup failure explains itself. */
+let serverOutput = '';
+
 /** Poll until the server answers, so the suite does not race its startup. */
 const waitForServer = async (attempts = 60): Promise<void> => {
   for (let i = 0; i < attempts; i += 1) {
+    if (server.exitCode !== null) {
+      throw new Error(
+        `Dev backend exited with code ${server.exitCode} before listening.\n${serverOutput}`,
+      );
+    }
     try {
       const response = await fetch(`${ORIGIN}/auth/token`, { method: 'POST' });
       if (response.ok) return;
@@ -48,7 +56,7 @@ const waitForServer = async (attempts = 60): Promise<void> => {
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  throw new Error(`Dev backend did not start on ${ORIGIN}`);
+  throw new Error(`Dev backend did not start on ${ORIGIN}.\n${serverOutput}`);
 };
 
 beforeAll(async () => {
@@ -56,8 +64,13 @@ beforeAll(async () => {
   server = spawn('node', ['--experimental-strip-types', 'index.ts'], {
     cwd: backendDir,
     env: { ...process.env, PORT: String(PORT) },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
+  // Captured rather than ignored: a server that fails to boot should say why
+  // instead of surfacing as an opaque timeout.
+  server.stdout?.on('data', (chunk: Buffer) => (serverOutput += chunk.toString()));
+  server.stderr?.on('data', (chunk: Buffer) => (serverOutput += chunk.toString()));
+
   await waitForServer();
 }, 45_000);
 

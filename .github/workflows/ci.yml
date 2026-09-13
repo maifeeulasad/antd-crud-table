@@ -38,7 +38,10 @@ jobs:
       - name: 'Test'
         run: pnpm test
       - name: 'Installing dev backend deps'
-        run: pnpm i --dir backend
+        # backend/ is not a workspace package - it has its own lockfile - so the
+        # install has to run from inside it rather than via a root flag.
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
       - name: 'Integration test against the dev backend'
         run: pnpm test:integration
       - name: 'Typecheck the demo app'
