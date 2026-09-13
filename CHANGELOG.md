@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-13
+
 ### Added
 
+- **CSV and Excel import.** A new opt-in `enableImport` adds an Import entry to
+  the toolbar menu, opening a dialog that picks a file, maps its headers onto
+  columns (auto-matched on header text, editable), previews the parsed rows with
+  per-row validation using the same `formConfig.rules` as the create form, and
+  creates the valid rows. Three formats are supported:
+  - **CSV** — dependency-free RFC 4180 parsing.
+  - **`.xls`** — the Excel 2003 SpreadsheetML this library exports, read back
+    without a dependency.
+  - **`.xlsx`** — real OOXML, read via `to-spreadsheet`'s `readExcel` (reusing
+    its JSZip rather than adding a second ZIP stack).
+- `fromImportValue` on `FieldTypeDefinition`: converts a raw string cell into
+  the record shape (the import counterpart to `fromFormValue`). Enum columns
+  accept both the stored key and the exported label.
+- Optional `createMany` on `CrudDataSource`, used by import for batch creation;
+  otherwise creates run through a bounded concurrency pool. Invalid rows are
+  skipped and reported per row; a failing create does not abort the run.
 - `configureRequest` on the REST source: per-call, optionally async adjustments
   to headers, verb, query parameters and `RequestInit`. This is what makes a
   rotating or awaited auth token, a per-operation header such as
