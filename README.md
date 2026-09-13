@@ -276,6 +276,8 @@ link.
 | `enableColumnSettings` | `boolean` | `true` | Column visibility and density |
 | `enableExport` | `boolean` | `true` | Export menu entries |
 | `exportScope` | `'all' \| 'page'` | `'all'` | Whole result set, or visible rows |
+| `enableImport` | `boolean` | `false` | Import menu entry (CSV / `.xls` / `.xlsx`) |
+| `importConcurrency` | `number` | `5` | Max simultaneous creates during import |
 | `customActions` | `(record, actions) => ReactNode[]` | — | Extra row controls |
 | `locale` | `PartialCrudTableLocale` | English | String overrides |
 
@@ -339,6 +341,41 @@ left alone.
 > which would mean taking on a ZIP implementation. Excel 2016+ shows a
 > format/extension mismatch prompt on open; the file is intact. Use CSV if you
 > need a prompt-free export.
+
+## Import
+
+Set `enableImport` to add an **Import** entry to the toolbar menu. It opens a
+dialog that walks a file in: pick it, map its headers onto columns (auto-matched
+on header text, and editable), preview the parsed rows with **per-row validation**
+using the same `formConfig.rules` the create form uses, then create the valid rows.
+
+```tsx
+<CrudTable<User, 'id'>
+  title="Users"
+  rowKey="id"
+  columns={columns}
+  hookConfig={{ storageKey: 'users' }}
+  enableImport
+/>
+```
+
+| Format | Read via |
+|---|---|
+| `.csv` | built-in RFC 4180 parser, no dependency |
+| `.xls` | the Excel 2003 SpreadsheetML this library exports, parsed as plain XML |
+| `.xlsx` | real OOXML, via [`to-spreadsheet`](https://github.com/maifeeulasad/to-spreadsheet)'s `readExcel` |
+
+Behaviour worth knowing:
+
+- **Values round-trip.** Export then import reproduces the original records. Enum
+  columns accept both the stored key and the exported label.
+- **Partial success is honest.** Rows failing validation are skipped and reported
+  per row; a row that fails to create does not abort the rest.
+- **Bounded concurrency.** A large file does not fire one request per row. A data
+  source may implement the optional `createMany(drafts)` to create server-side in
+  a batch; otherwise creates run through a small pool (`importConcurrency`, default
+  5).
+- **Passwords are never imported**, the same way they are never exported.
 
 ## Using the hook directly
 
