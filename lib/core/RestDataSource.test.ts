@@ -182,3 +182,175 @@ describe('RestDataSource', () => {
     expect(calls[0].url).toBe('/update?id=7');
   });
 });
+
+// #64: the source could express a PATCH verb and a fixed header, and very
+// little else that a real API asks for.
+describe('request configuration', () => {
+  it('accepts any verb, not a closed union', async () => {
+    const { impl, calls } = stubFetch(json({}));
+    await new RestDataSource<User, 'id'>({ fetchImpl: impl, methods: { create: 'PATCH' } }).create({
+      name: 'a',
+    });
+
+    expect(calls[0].init?.method).toBe('PATCH');
+  });
+
+  it('resolves headers per call, so an awaited token works', async () => {
+    const { impl, calls } = stubFetch(json([]), json([]));
+    let issued = 0;
+    const source = new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      configureRequest: async () => {
+        issued += 1;
+        await Promise.resolve();
+        return { headers: { Authorization: `Bearer token-${issued}` } };
+      },
+    });
+
+    await source.list({ page: 1, pageSize: 10 });
+    await source.list({ page: 1, pageSize: 10 });
+
+    expect((calls[0].init?.headers as Record<string, string>).Authorization).toBe('Bearer token-1');
+    expect((calls[1].init?.headers as Record<string, string>).Authorization).toBe('Bearer token-2');
+  });
+
+  it('sends a header for one operation only', async () => {
+    const { impl, calls } = stubFetch(json({}), json([]));
+    const source = new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      configureRequest: ({ operation }) =>
+        operation === 'create' ? { headers: { 'Idempotency-Key': 'k1' } } : {},
+    });
+
+    await source.create({ name: 'a' });
+    await source.list({ page: 1, pageSize: 10 });
+
+    expect((calls[0].init?.headers as Record<string, string>)['Idempotency-Key']).toBe('k1');
+    expect((calls[1].init?.headers as Record<string, string>)['Idempotency-Key']).toBeUndefined();
+  });
+
+  it('builds a conditional header from the id under update', async () => {
+    const { impl, calls } = stubFetch(json({}));
+    await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      configureRequest: ({ operation, id }) =>
+        operation === 'update' ? { headers: { 'If-Match': `"${String(id)}"` } } : {},
+    }).update(7, { name: 'a' });
+
+    expect((calls[0].init?.headers as Record<string, string>)['If-Match']).toBe('"7"');
+  });
+
+  it('passes RequestInit fields through to fetch', async () => {
+    const { impl, calls } = stubFetch(json([]));
+    await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      init: { credentials: 'include', cache: 'no-store' },
+    }).list({ page: 1, pageSize: 10 });
+
+    expect(calls[0].init?.credentials).toBe('include');
+    expect(calls[0].init?.cache).toBe('no-store');
+  });
+
+  it('honours an AbortSignal', async () => {
+    const controller = new AbortController();
+    const impl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      return json([]);
+    }) as unknown as typeof fetch;
+
+    controller.abort();
+    await expect(
+      new RestDataSource<User, 'id'>({ fetchImpl: impl, init: { signal: controller.signal } }).list({
+        page: 1,
+        pageSize: 10,
+      }),
+    ).rejects.toThrow(/Abort/);
+  });
+
+  it('appends static query parameters to every operation', async () => {
+    const { impl, calls } = stubFetch(json([]), json({}));
+    const source = new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      query: { 'api-version': '2024-01' },
+    });
+
+    await source.list({ page: 1, pageSize: 10 });
+    await source.remove(3);
+
+    expect(calls[0].url).toContain('api-version=2024-01');
+    expect(calls[1].url).toContain('api-version=2024-01');
+  });
+
+  // Appending `?` unconditionally produced two question marks, which a server
+  // reads as part of the preceding value rather than as a separator.
+  it('merges with a query string already present on the endpoint', async () => {
+    const { impl, calls } = stubFetch(json([]));
+    await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      endpoints: { list: '/rows?view=compact' },
+    }).list({ page: 1, pageSize: 10 });
+
+    expect(calls[0].url.split('?').length - 1).toBe(1);
+    const url = new URL(calls[0].url, 'http://x');
+    expect(url.searchParams.get('view')).toBe('compact');
+    expect(url.searchParams.get('current')).toBe('1');
+  });
+
+  it('maps a create response through parseRecord', async () => {
+    const { impl } = stubFetch(json({ data: { id: 9, name: 'wrapped' } }));
+    const created = await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      parseRecord: (payload) => (payload as { data: User }).data,
+    }).create({ name: 'wrapped' });
+
+    expect(created).toEqual({ id: 9, name: 'wrapped' });
+  });
+
+  it('gives serializeRequest the operation it is serialising for', async () => {
+    const { impl, calls } = stubFetch(json({}));
+    await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      serializeRequest: (draft, context) => ({ op: context.operation, attributes: draft }),
+    }).update(1, { name: 'a' });
+
+    expect(JSON.parse(String(calls[0].init?.body))).toEqual({
+      op: 'update',
+      attributes: { name: 'a' },
+    });
+  });
+
+  it('lets overrides replace the configured verb', async () => {
+    const { impl, calls } = stubFetch(json({}));
+    await new RestDataSource<User, 'id'>({
+      fetchImpl: impl,
+      methods: { update: 'PUT' },
+      configureRequest: () => ({ method: 'PATCH' }),
+    }).update(1, { name: 'a' });
+
+    expect(calls[0].init?.method).toBe('PATCH');
+  });
+
+  it('filters are a seam, so a single search parameter is a small override', async () => {
+    const { impl, calls } = stubFetch(json([]));
+
+    class SingleSearchParam extends RestDataSource<User, 'id'> {
+      protected serializeFilters(
+        filters: { readonly [P in keyof User]?: string | number | boolean } | undefined,
+        params: URLSearchParams,
+      ): void {
+        const first = Object.values(filters ?? {}).find((v) => v !== undefined && v !== '');
+        if (first !== undefined) params.set('q', String(first));
+      }
+    }
+
+    await new SingleSearchParam({ fetchImpl: impl }).list({
+      page: 1,
+      pageSize: 10,
+      filters: { name: 'ada' },
+    });
+
+    const url = new URL(calls[0].url, 'http://x');
+    expect(url.searchParams.get('q')).toBe('ada');
+    expect(url.searchParams.has('name')).toBe(false);
+  });
+});

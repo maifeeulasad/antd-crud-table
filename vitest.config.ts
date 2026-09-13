@@ -7,6 +7,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['lib/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+    // Integration tests spawn the dev backend and talk to it over HTTP. They
+    // are opt-in via `pnpm test:integration` so the default run stays fast and
+    // does not depend on a free port.
+    exclude: ['**/node_modules/**', '**/*.integration.test.ts'],
     // Component tests mount ProTable, which pulls in antd's config provider,
     // table, form and portal machinery. That is genuinely slow, and slower
     // again under coverage instrumentation, so the 5s default is too tight.
@@ -31,7 +35,7 @@ export default defineConfig({
       // 54% to 87%.
       thresholds: {
         statements: 91,
-        branches: 82,
+        branches: 83,
         functions: 92,
         lines: 92,
       },

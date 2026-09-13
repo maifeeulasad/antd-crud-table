@@ -5,6 +5,33 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `configureRequest` on the REST source: per-call, optionally async adjustments
+  to headers, verb, query parameters and `RequestInit`. This is what makes a
+  rotating or awaited auth token, a per-operation header such as
+  `Idempotency-Key` or `If-Match`, and cookie credentials expressible without
+  subclassing.
+- `query` and `init` options, for parameters and `fetch` settings that apply to
+  every request — including `credentials: 'include'` and an `AbortSignal`.
+- `parseRecord`, the inbound counterpart to `serializeRequest`, so a create or
+  update response wrapped in an envelope yields the record rather than the
+  envelope.
+- `serializeFilters` as an overridable seam, matching `serializeSort`, for APIs
+  with a single search parameter rather than one per column.
+- Verbs accept any string rather than a closed union.
+- The dev backend under `backend/` now models an awkward API — bearer auth with
+  expiring tokens, a required version header, PATCH updates, conditional writes,
+  idempotent creates and enveloped payloads — with `pnpm test:integration`
+  running the REST source against it over real HTTP.
+
+### Fixed
+
+- An endpoint that already carried a query string produced a URL with two
+  question marks, because the generated query was appended unconditionally.
+
 ## [0.7.0] - 2026-08-30
 
 ### Added

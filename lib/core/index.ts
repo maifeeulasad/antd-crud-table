@@ -19,10 +19,15 @@ export { LocalStorageDataSource } from './LocalStorageDataSource';
 export type { Timestamped } from './LocalStorageDataSource';
 export { RestDataSource, RestError } from './RestDataSource';
 export type {
+  HttpMethod,
   RestDataSourceOptions,
   RestEndpoints,
   RestMethods,
+  RestOperation,
   RestParamNames,
+  RestQueryValue,
+  RestRequestContext,
+  RestRequestOverrides,
 } from './RestDataSource';
 export { CustomDataSource, UnsupportedOperationError } from './CustomDataSource';
 export type { CrudOperations } from './CustomDataSource';

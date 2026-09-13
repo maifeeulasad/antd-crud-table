@@ -35,6 +35,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "backend": "node --experimental-strip-types backend/index.ts",
     "preview": "vite preview"
   },
   "peerDependencies": {

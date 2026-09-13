@@ -37,6 +37,10 @@ jobs:
         run: pnpm lint
       - name: 'Test'
         run: pnpm test
+      - name: 'Installing dev backend deps'
+        run: pnpm i --dir backend
+      - name: 'Integration test against the dev backend'
+        run: pnpm test:integration
       - name: 'Typecheck the demo app'
         run: pnpm exec tsc --noEmit -p tsconfig.app.json
       - name: 'Build library'

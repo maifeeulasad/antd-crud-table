@@ -16,16 +16,21 @@ so these recipes cannot drift from the API they describe.
 | `baseUrl` | Prefixed to every request, exactly once |
 | `endpoints` | Paths for `list` / `create` / `update` / `remove` |
 | `paramNames` | Query-parameter names for page, size, sort field and direction |
-| `methods` | HTTP verb per mutating operation |
+| `methods` | HTTP verb per operation — any string, not a closed union |
 | `headers` | Sent with every request |
+| `query` | Query parameters appended to every request |
+| `init` | `RequestInit` passthrough — `credentials`, `mode`, `cache`, `signal` |
+| `configureRequest` | Per-call adjustments, may be async |
 | `serializeRequest` | Maps a draft onto the request body |
 | `parseResponse` | Maps a list payload onto `{ items, total }` |
+| `parseRecord` | Maps a create/update payload onto the record |
 
 ## What you override
 
 | Method | Purpose |
 |---|---|
 | `buildListUrl(query)` | Full list path and query string |
+| `serializeFilters(filters, params)` | Filter encoding |
 | `buildRecordPath(endpoint, id)` | How a single record is addressed |
 | `serializeSort(sort, params)` | Sort encoding |
 | `request(path, init)` | Transport, error handling, retries |
@@ -124,6 +129,72 @@ class AuthedSource extends RestDataSource<Article, 'id'> {
 ```
 
 ---
+
+## Recipe 5 — auth, versioning and conditional writes
+
+`configureRequest` runs per call and may be async, which is what makes a
+rotating token, a per-operation header and a conditional write expressible
+without a subclass.
+
+```ts
+new RestDataSource<User, 'id'>({
+  baseUrl: '/api',
+  endpoints: { list: '/users', create: '/users', update: '/users', remove: '/users' },
+  methods: { update: 'PATCH' },
+  headers: { 'X-Api-Version': '2024-01' },   // fixed, every request
+  query:   { 'api-key': 'demo' },            // appended to every request
+  init:    { credentials: 'include' },       // cookie auth
+
+  configureRequest: async ({ operation, id, draft }) => {
+    // Awaited per call, so an expired token refreshes mid-session.
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${await tokens.current()}`,
+    };
+
+    // One operation only.
+    if (operation === 'create') headers['Idempotency-Key'] = keyFor(draft);
+    if (operation === 'update') headers['If-Match'] = `"${revisionOf(id)}"`;
+
+    return { headers };
+  },
+
+  serializeRequest: (draft) => ({ data: { attributes: draft } }),
+  parseResponse: (payload) => {
+    const { data, meta } = payload as { data: User[]; meta: { total_count: number } };
+    return { items: data, total: meta.total_count };
+  },
+  // Writes are enveloped too; without this the envelope comes back as the record.
+  parseRecord: (payload) => (payload as { data: User }).data,
+});
+```
+
+`configureRequest` is merged **over** the static options, so it can also replace
+the verb for a single call.
+
+## Recipe 6 — one search parameter instead of one per column
+
+By default each filter is sent under its own field name. An API with a single
+`?q=` overrides one seam:
+
+```ts
+class SingleSearchParam extends RestDataSource<User, 'id'> {
+  protected serializeFilters(filters: CrudQuery<User>['filters'], params: URLSearchParams): void {
+    const first = Object.values(filters ?? {}).find((v) => v !== undefined && v !== '');
+    if (first !== undefined) params.set('q', String(first));
+  }
+}
+```
+
+## Verified against a real server
+
+The recipes above are unit-tested, and the awkward-API shape is additionally
+exercised end to end against the dev server under `backend/` — bearer auth with
+expiring tokens, a required version header, PATCH updates, conditional writes,
+idempotent creates and enveloped payloads:
+
+```bash
+pnpm test:integration
+```
 
 ## Errors
 
