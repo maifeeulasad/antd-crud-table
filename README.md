@@ -62,7 +62,12 @@ form, confirmed deletes, and CSV/JSON/Excel export.
   `ConfigProvider` around it.
 - **Export** to CSV, JSON and Excel, covering the whole filtered result set —
   with CSV formula injection neutralised.
-- **Zero runtime dependencies.** Everything is a peer you already have.
+- **Import** from CSV, `.xls` and `.xlsx`: pick a file, map headers onto columns,
+  preview with per-row validation, then create the valid rows.
+- **Almost dependency-free.** The heavy things — antd, React, dayjs — are peers you
+  already have. The only runtime dependency is
+  [`to-spreadsheet`](https://github.com/maifeeulasad/to-spreadsheet), which reads
+  `.xlsx` on import.
 
 ## Installation
 
