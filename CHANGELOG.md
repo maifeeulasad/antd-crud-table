@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-13
+
+### Changed
+
+- Documentation only: README highlights the import capability and corrects the
+  outdated "zero runtime dependencies" claim (reading `.xlsx` uses
+  `to-spreadsheet`); migration guide notes `enableImport`. No code changes.
+
 ## [0.8.0] - 2026-09-13
 
 ### Added
