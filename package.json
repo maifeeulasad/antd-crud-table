@@ -118,5 +118,8 @@
   ],
   "sideEffects": [
     "*.css"
-  ]
+  ],
+  "dependencies": {
+    "to-spreadsheet": "^1.4.0"
+  }
 }
