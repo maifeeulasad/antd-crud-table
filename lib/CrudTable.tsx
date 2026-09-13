@@ -20,6 +20,10 @@ import type { ExportFormat } from './utils/exportData';
 import CrudImportModal from './CrudImportModal';
 import { fileParsers } from './utils/importData';
 import type { ImportColumn, ImportFormat, ImportSink } from './utils/importData';
+// Side-effect imports: registering the extra format parsers makes them
+// available wherever CrudTable is used. Each is a no-op until a matching file
+// is chosen, so listing every format here is what keeps the toolbar menu honest.
+import './utils/importSpreadsheetML';
 
 /**
  * Import formats the dialog offers, in menu order, filtered to those whose
