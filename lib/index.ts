@@ -107,3 +107,5 @@ export type {
 } from './utils/importData';
 export { default as CrudImportModal } from './CrudImportModal';
 export type { CrudImportModalProps } from './CrudImportModal';
+// SpreadsheetML (.xls) import parser; importing this registers the `xls` parser.
+export { parseSpreadsheetML, parseSpreadsheetMLTable } from './utils/importSpreadsheetML';
