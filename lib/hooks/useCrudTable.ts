@@ -102,7 +102,7 @@ export interface StaticStrategy<T, K extends keyof T> extends UseCrudTableOption
 /** Serves records from a REST API. */
 export interface RestStrategy<T, K extends keyof T> extends UseCrudTableOptionsBase<T, K> {
   /** Endpoints, parameter names, verbs and payload mapping. */
-  api: RestDataSourceOptions<T>;
+  api: RestDataSourceOptions<T, K>;
 }
 
 /** Serves records persisted to `localStorage`. */
