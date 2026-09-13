@@ -2,6 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import dts from 'vite-plugin-dts';
 import path from 'path';
+import { createRequire } from 'module';
+
+const pkg = createRequire(import.meta.url)('./package.json') as {
+  dependencies?: Record<string, string>;
+};
 
 const peerDeps = [
   'react',
@@ -13,8 +18,14 @@ const peerDeps = [
   'dayjs',
 ];
 
+// Runtime dependencies are installed alongside the package, so they are
+// externalised rather than bundled - otherwise e.g. to-spreadsheet (and the
+// JSZip it carries) would be inlined into the bundle and duplicated in a
+// consumer that also uses it directly.
+const externalPackages = [...peerDeps, ...Object.keys(pkg.dependencies ?? {})];
+
 const isExternal = (id: string) =>
-  peerDeps.some((pkg) => id === pkg || id.startsWith(`${pkg}/`));
+  externalPackages.some((name) => id === name || id.startsWith(`${name}/`));
 
 export default defineConfig({
   plugins: [
