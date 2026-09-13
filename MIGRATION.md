@@ -211,3 +211,7 @@ directly.
 - `notifications: false` to suppress the built-in toasts
 - `enableColumnSettings` now actually works (it was declared but never read)
 - `listAll()` for exporting beyond the current page
+- `enableImport` (0.8.0) — import from CSV, `.xls` and `.xlsx` with column
+  mapping, per-row validation and bounded-concurrency creation. Adds a runtime
+  dependency on `to-spreadsheet` for reading `.xlsx`, and an optional
+  `createMany` on `CrudDataSource` for batch creation.
