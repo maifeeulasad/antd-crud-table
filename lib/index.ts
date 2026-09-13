@@ -79,3 +79,31 @@ export {
   exportAllData,
 } from './utils/exportData';
 export type { ColumnOption, ExportFormat, ExportOptions } from './utils/exportData';
+
+// Import utilities
+export {
+  parseCsv,
+  parseTable,
+  detectFormat,
+  autoMapColumns,
+  coerceValue,
+  evaluateRules,
+  prepareRows,
+  runImport,
+  registerFileParser,
+  fileParsers,
+} from './utils/importData';
+export type {
+  ImportFormat,
+  ImportColumn,
+  ParsedTable,
+  ColumnMapping,
+  PreparedRow,
+  ImportResult,
+  ImportRowOutcome,
+  ImportSink,
+  RunImportOptions,
+  FileParser,
+} from './utils/importData';
+export { default as CrudImportModal } from './CrudImportModal';
+export type { CrudImportModalProps } from './CrudImportModal';

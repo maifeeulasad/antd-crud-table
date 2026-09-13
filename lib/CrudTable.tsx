@@ -17,6 +17,19 @@ import type { PartialCrudTableLocale } from './locale/types';
 import type { CrudFilters, CrudQuery, CrudSort } from './core';
 import { exportData } from './utils/exportData';
 import type { ExportFormat } from './utils/exportData';
+import CrudImportModal from './CrudImportModal';
+import { fileParsers } from './utils/importData';
+import type { ImportColumn, ImportFormat, ImportSink } from './utils/importData';
+
+/**
+ * Import formats the dialog offers, in menu order, filtered to those whose
+ * parser is actually registered. CSV is built in; `xls`/`xlsx` register
+ * themselves when their modules are imported, so the menu grows as those
+ * formats are added without this list lying about what it can read.
+ */
+const IMPORT_FORMAT_ORDER: ImportFormat[] = ['csv', 'xls', 'xlsx'];
+const availableImportFormats = (): ImportFormat[] =>
+  IMPORT_FORMAT_ORDER.filter((format) => Boolean(fileParsers[format]));
 
 /**
  * A column bound to one property of `T`.
@@ -83,6 +96,16 @@ export interface CrudTableConfig<T extends object, K extends keyof T> {
   enableColumnSettings?: boolean;
   /** Show the export entries in the toolbar menu. Defaults to true. */
   enableExport?: boolean;
+  /**
+   * Show the import entry in the toolbar menu. Defaults to false.
+   *
+   * Import creates records through the data source's `create` (or `createMany`
+   * when available), so it is only meaningful for a writable source. Opt-in,
+   * mirroring how a consumer decides whether the table accepts bulk input.
+   */
+  enableImport?: boolean;
+  /** Max simultaneous single-row creates during import. Defaults to 5. */
+  importConcurrency?: number;
   /**
    * Whether export covers the whole filtered result set or just the rows on
    * screen. Defaults to `'all'`, falling back to `'page'` when the data source
@@ -177,6 +200,8 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
     enableBulkOperations = false,
     enableColumnSettings = true,
     enableExport = true,
+    enableImport = false,
+    importConcurrency,
     exportScope = 'all',
     customActions,
     locale,
@@ -456,6 +481,64 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
   // ten rows was correct-looking and wrong.
   const exportLabel = canExportAll ? strings.exportAll : strings.exportPage;
 
+  const [importOpen, setImportOpen] = useState(false);
+
+  /** Columns as the importer needs them, with rules resolved exactly as the form does. */
+  const importColumns = useMemo<ImportColumn[]>(
+    () =>
+      columns.map((col) => {
+        const definition = getFieldDefinition(col.fieldType);
+        const structural = asFieldColumn(col);
+        const userRules =
+          col.formConfig?.rules ??
+          (col.formConfig?.required
+            ? [{ required: true, message: strings.requiredField(col.title) }]
+            : []);
+        return {
+          title: col.title,
+          dataIndex: String(col.dataIndex),
+          fieldType: col.fieldType,
+          enumOptions: col.enumOptions,
+          rules: [...(definition.rules?.(structural, strings) ?? []), ...userRules],
+        };
+      }),
+    [columns, asFieldColumn, strings],
+  );
+
+  /**
+   * Import creates through the raw data source (not the hook's `create`, which
+   * swallows errors into `onError` and returns null); the importer needs a
+   * throwing create so it can report per-row failures. `createMany` is used
+   * when the source offers it.
+   */
+  const importSink = useMemo<ImportSink>(() => {
+    const source = crud.dataSource;
+    return {
+      create: (draft) => source.create(draft as Partial<T>),
+      createMany: source.createMany
+        ? (drafts) => source.createMany!(drafts as Partial<T>[])
+        : undefined,
+    };
+  }, [crud.dataSource]);
+
+  const handleImported = useCallback(
+    (summary: { created: number; invalid: number; failed: number }) => {
+      if (summary.failed === 0 && summary.invalid === 0) {
+        message.success(strings.importSuccess(summary.created));
+      } else {
+        message.warning(
+          strings.importPartial(
+            summary.created,
+            summary.created + summary.failed + summary.invalid,
+            summary.failed + summary.invalid,
+          ),
+        );
+      }
+      crud.actionRef.current?.reload();
+    },
+    [strings, crud],
+  );
+
   const table = (
     <ProConfigProvider needDeps intl={intl}>
       <ProTable<T>
@@ -485,6 +568,16 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
             key="menu"
             menu={{
               items: [
+                ...(enableImport && availableImportFormats().length > 0
+                  ? [
+                      {
+                        key: 'import',
+                        label: strings.importMenu,
+                        onClick: () => setImportOpen(true),
+                      },
+                      { type: 'divider' as const },
+                    ]
+                  : []),
                 ...(enableExport
                   ? [
                       {
@@ -572,6 +665,19 @@ const CrudTable = <T extends object, K extends keyof T>(config: CrudTableConfig<
           })}
         </Form>
       </Modal>
+
+      {enableImport && (
+        <CrudImportModal
+          open={importOpen}
+          columns={importColumns}
+          formats={availableImportFormats()}
+          sink={importSink}
+          concurrency={importConcurrency}
+          locale={strings}
+          onImported={handleImported}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
     </ProConfigProvider>
   );
 
